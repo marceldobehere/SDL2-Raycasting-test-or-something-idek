@@ -1,0 +1,119 @@
+Registers:
+
+0 IP - instruction Pointer
+
+1 Regoffset - Register that cpu uses to determine the correct location of addresses from a address
+2 Ramoffset - like Regoffset but for Ram addresses
+3 Vramoffset - Register that shows where the vram starts in Ram (1280 x 720 pixels)
+
+4 MathResult1 - Register for Results for Math
+5 MathResult2 - Register for Results for Math
+
+6 Arg1 - Argument for Command (May not be needed)
+7 Arg2 - Argument for Command (May not be needed)
+8 Arg3 - Argument for Command (May not be needed)
+
+9 - 41 Temp1-32 - temporary register for programs
+
+42 Keyboardoffset - Register that shows where the Keyboardbuttons are stored (256 keys)
+
+------------------------------------------------------------------------------------
+COMMANDS:
+
+
+Command Val1 Val2 Val3
+
+-----------------------
+
+
+Registers and Ram:
+
+17 value reg_addr
+- writes value to registeraddress
+
+18 value ram_addr
+- writes value to ramaddress
+
+1 reg_addr1 reg_addr2
+- writes value of registeraddress1 to registeraddress2
+
+2 
+- writes value of registeraddress1 to registeraddress2
+- BUT registeraddress1 is taken from Arg1 Register
+- and registeraddress2 is taken from Arg2 Register
+
+3 reg_adrr ram_adrr
+- writes value from registeraddress to ramadress
+
+4 ram_adrr reg_adrr
+- writes value from ramadress to registeraddress
+
+5 
+- writes value from registeraddress to ramadress
+- BUT registeraddress is taken from Arg1 Register
+- and ramaddress is taken from Arg2 Register
+
+6 
+- writes value from ramadress to registeraddress
+- BUT ramaddress is taken from Arg1 Register
+- and registeraddress is taken from Arg2 Register
+
+
+Math:
+
+7 value1 operation value2 
+- does math with value1 the operation and value2 and saves result in the MathResult1 Register
+- Operations can be 0(+) 1(-) 2(*) 3(/)
+- In the case of division, the remainder will be saved in the MathResult2 Register
+
+8 reg_adrr_1 operation value2 
+- does math with registeraddress1 the operation and value2 and saves result in the MathResult1 Register
+- Operations can be 0(+) 1(-) 2(*) 3(/)
+- In the case of division, the remainder will be saved in the MathResult2 Register
+
+
+9 reg_adrr_1 operation reg_adrr_2
+- does math with registeraddress1 the operation and reg_adrr_2 and saves result in the MathResult1 Register
+- Operations can be 0(+) 1(-) 2(*) 3(/)
+- In the case of division, the remainder will be saved in the MathResult2 Register
+
+10 reg_adrr_1 reg_adrr_2 reg_adrr_3
+- does math with registeraddress1 the operatio(in reg_adrr_2) and reg_adrr_2 and saves result in the MathResult1 Register
+- Operations can be 0(+) 1(-) 2(*) 3(/)
+- In the case of division, the remainder will be saved in the MathResult2 Register
+
+
+Jumping and Conditionals:
+
+11 value
+- jumps the Programcounter to an address in ram/rom
+
+12 value reg_addr
+- jumps to an address if the value of registeraddress is not 0
+
+
+13 reg_addr1 reg_addr2
+- jumps to the adress in registeraddress1 if the value of registeraddress2 is not 0
+
+Logic:
+
+14 reg_addr1 reg_addr2 operation
+- sets the result of MathResult1 to the operation of the values in both addresses
+- operation can be 0(AND) 1(OR) 2(NOT) 3(NAND) 4(NOR) 5(XOR) 
+
+15
+- sets the result of MathResult1 to the operation of the values in the Arg Registers
+- where the first operand is in Arg1
+- and the operation is in Arg2
+- and the second operand is in Arg3
+- operation can be 0(AND) 1(OR) 2(NOT) 3(NAND) 4(NOR) 5(XOR) 
+
+other:
+
+16 
+- stops cpu
+
+
+
+
+
