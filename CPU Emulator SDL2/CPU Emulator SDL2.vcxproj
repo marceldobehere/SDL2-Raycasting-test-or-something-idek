@@ -23,7 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{4bde411c-38fa-4d68-953d-07152c7da3a8}</ProjectGuid>
     <RootNamespace>CPUEmulatorSDL2</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -141,6 +141,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Dev\SDL2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -154,11 +155,29 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mapmem3d.cpp" />
+    <ClCompile Include="other\main.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU.h" />
     <ClInclude Include="IO.h" />
     <ClInclude Include="mapmem3d.h" />
+    <ClInclude Include="old\CPU.h" />
+    <ClInclude Include="old\IO.h" />
+    <ClInclude Include="other\aabb.h" />
+    <ClInclude Include="other\camera.h" />
+    <ClInclude Include="other\color.h" />
+    <ClInclude Include="other\external\stb_image.h" />
+    <ClInclude Include="other\external\stb_image_write.h" />
+    <ClInclude Include="other\hittable.h" />
+    <ClInclude Include="other\hittable_list.h" />
+    <ClInclude Include="other\material.h" />
+    <ClInclude Include="other\perlin.h" />
+    <ClInclude Include="other\ray.h" />
+    <ClInclude Include="other\rtweekend.h" />
+    <ClInclude Include="other\rtw_stb_image.h" />
+    <ClInclude Include="other\sphere.h" />
+    <ClInclude Include="other\texture.h" />
+    <ClInclude Include="other\vec3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

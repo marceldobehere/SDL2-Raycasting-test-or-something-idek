@@ -10,7 +10,10 @@ using namespace std;
 //#include "IO.h"
 #include <math.h>
 #include "mapmem3d.h"
-#define PI 3.14159265
+#define PI 3.14159265358979323846
+#define pi_a 0.017453292519943295
+
+#include "other/main.cc"
 
 bool debug_out = true;
 
@@ -47,18 +50,89 @@ void log(const char a[], char sign)
 	printf("\n");
 }
 
-struct Point
+
+struct Vector3
 {
-	double x, y, z, rot_x, rot_y, rot_z;
+	double x, y, z;
 };
 
+
+
+
+
+struct Point
+{
+	Vector3 pos, rot;
+};
+
+
+
+
+
+
+void getRotatedVec(Point* point, bool normalize)
+{
+	double ray_move_x = 0;
+	double ray_move_y = 0;
+	double ray_move_z = 0;
+
+
+	ray_move_x += sin(point->rot.x * pi_a);
+	//ray_move_z += cos(point->rot.x * pi_a);
+	ray_move_y += sin(point->rot.y * pi_a);
+	//ray_move_z += cos(point->rot.y * pi_a);
+	ray_move_z += sin(point->rot.z * pi_a);
+	//ray_move_y += cos(point->rot.z * pi_a);
+
+	//ray_move_x += sin(point->rot.x * pi_a);
+	//ray_move_z += cos(point->rot.x * pi_a);
+
+	//ray_move_x += sin(point->rot.y * pi_a);
+	//ray_move_y += cos(point->rot.y * pi_a);
+
+	//ray_move_y += sin(point->rot.z * pi_a);
+	//ray_move_z += cos(point->rot.z * pi_a);
+
+	//ray_move_y += (cos(point->rot.x * pi_a) - sin(point->rot.x * pi_a));
+	//ray_move_z += (cos(point->rot.x * pi_a) + sin(point->rot.x * pi_a));
+
+	//ray_move_z += (cos(point->rot.y * pi_a) - sin(point->rot.y * pi_a));
+	//ray_move_x += (cos(point->rot.y * pi_a) + sin(point->rot.y * pi_a));
+
+	//ray_move_x += (cos(point->rot.z * pi_a) - sin(point->rot.z * pi_a));
+	//ray_move_y += (cos(point->rot.z * pi_a) + sin(point->rot.z * pi_a));
+
+	
+
+
+	if (normalize)
+	{
+		double mod = 0.0;
+
+		mod += ray_move_x * ray_move_x;
+		mod += ray_move_y * ray_move_y;
+		mod += ray_move_z * ray_move_z;
+
+		double mag = std::sqrt(mod);
+
+		if (mag != 0) 
+		{
+			ray_move_x /= mag;
+			ray_move_y /= mag;
+			ray_move_z /= mag;
+		}
+	}
+
+	point->pos.x = ray_move_x;
+	point->pos.y = ray_move_y;
+	point->pos.z = ray_move_z;
+
+}
 
 
 int main(int argc, char** argv)
 {
 	const int width = 1280, height = 720;
-
-
 
 	log_debug("Opening Window...", '>');
 
@@ -68,7 +142,7 @@ int main(int argc, char** argv)
 
 	SDL_Window* window = SDL_CreateWindow
 	(
-		"VM - Screen",
+		"Raycasting test",
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		width, height,
 		SDL_WINDOW_SHOWN
@@ -89,7 +163,7 @@ int main(int argc, char** argv)
 	{
 		//std::cout << SDL_GetPixelFormatName(info.texture_formats[i]) << std::endl;
 	}
-
+	 
 	const unsigned int texWidth = width;
 	const unsigned int texHeight = height;
 	SDL_Texture* texture = SDL_CreateTexture
@@ -111,25 +185,25 @@ int main(int argc, char** argv)
 
 
 
-	log_debug("Done.", '<');
+	log_debug("Done.", '<'); 
 
 
-
-
-
+	//main_test();
 
 
 	Point playerPosition;
-	playerPosition.x = 50;
-	playerPosition.y = 50;
-	playerPosition.z = 50;
-	playerPosition.rot_x = 0;
-	playerPosition.rot_y = 0;
-	playerPosition.rot_z = 0;
+	playerPosition.pos.x = 52;
+	playerPosition.pos.y = 52.5;
+	playerPosition.pos.z = 49;
+	playerPosition.rot.x = 0;
+	playerPosition.rot.y = -5;
+	playerPosition.rot.z = 5;
 
 	double fov = 90;
+	double fov_2 = 1;
+	int mode = 0;
 
-	mapmem3d MEM_MAP = *(new mapmem3d());
+	mapmem3d MEM_MAP = *(new mapmem3d);
 	MEM_MAP.init();
 
 
@@ -138,22 +212,6 @@ int main(int argc, char** argv)
 		MEM_MAP.submaps[i] = 0;
 
 
-	{
-		Pixeldata aaa= *(new Pixeldata());
-		aaa.r = 255;
-		aaa.g = 5;
-		aaa.b = 0;
-
-		Submap x = *(new Submap());
-		x.filled = true;
-		x.fill = aaa;
-
-		cout << "TEST1: " << x.testing << "\n";
-
-		MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)] = &x;
-
-		cout << "TEST2: " << MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)]->testing << "\n";
-	}
 
 	//cout << "TEST3: " << MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)]->testing << "\n";
 
@@ -167,23 +225,178 @@ int main(int argc, char** argv)
 	//MEM_MAP.getPixel(0, 0, 0);
 
 
-	{
-		Pixeldata qaaa = *(new Pixeldata());
+	
+		Pixeldata aaa = *(new Pixeldata);
+		aaa.r = 255;
+		aaa.g = 5;
+		aaa.b = 10;
+
+		Submap xaa = *(new Submap);
+		xaa.filled = true;
+		xaa.fill = aaa;
+
+		cout << "TEST1: " << xaa.testing << "\n";
+
+		MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)] = &xaa;
+
+		cout << "TEST2: " << MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)]->testing << "\n";
+
+		Pixeldata qaaa = *(new Pixeldata);
 		qaaa.r = 10;
 		qaaa.g = 15;
 		qaaa.b = 244;
 
-		Submap ax = *(new Submap());
-		ax.filled = true;
+		Submap ax = *(new Submap);
+		ax.filled = false;
 		ax.fill = qaaa;
 
+		for (int i = 0; i < 10000; i += 1)
+		{
+			ax.pixels[i + 0] = &qaaa;
+		}
+
+		for (int i = 10000; i < 100000; i += 2)
+		{
+			ax.pixels[i + 0] = &qaaa;
+			ax.pixels[i + 1] = &aaa;
+		}
+
+		for (int i = 100000; i < 1000000; i += 3)
+		{
+			ax.pixels[i + 2] = 0;
+		}
+
+
+
 		MEM_MAP.submaps[52 + (51 * 100) + (50 * 10000)] = &ax;
-	}
+	
 
 
 
 	cout << "TEST A: " << MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)]->fill.r << "\n";
 	cout << "TEST B: " << MEM_MAP.submaps[52 + (51 * 100) + (50 * 10000)]->fill.r << "\n";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	if (false)
+	{
+
+		const auto aspect_ratio = 16.0 / 9.0;
+		const int image_width = 480;
+		const int image_height = static_cast<int>(image_width / aspect_ratio);
+		const int samples_per_pixel = 5;
+		const int max_depth = 50;
+
+		// World
+
+		auto world = random_scene();
+
+		// Camera
+
+		point3 lookfrom(13, 2, 3);
+		point3 lookat(0, 0, 0);
+		vec3 vup(0, 1, 0);
+		auto dist_to_focus = 10.0;
+		auto aperture = 0.1;
+
+		camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
+
+		for (int j = image_height - 1; j >= 0; --j) 
+		{
+			std::cout << "\rScanlines remaining: " << j << ' ' << std::flush;
+			for (int i = 0; i < image_width; ++i)
+			{
+				color pixel_color(0, 0, 0);
+				for (int s = 0; s < samples_per_pixel; ++s) {
+					auto u = (i + random_double()) / (image_width - 1);
+					auto v = (j + random_double()) / (image_height - 1);
+					ray r = cam.get_ray(u, v);
+					pixel_color += ray_color(r, world, max_depth);
+				}
+				COL temp = get_color(pixel_color, samples_per_pixel);
+
+
+				int intarray[3] = { temp.r,temp.g,temp.b };
+				int* temprgb = intarray;
+
+				const unsigned int offset = (texWidth * 4 * ((image_height - 1) - j)) + i * 4;
+				pixels[offset + 0] = temprgb[2];       // b
+				pixels[offset + 1] = temprgb[1];       // g
+				pixels[offset + 2] = temprgb[0];       // r
+				pixels[offset + 3] = SDL_ALPHA_OPAQUE; // a
+
+			}
+
+			
+
+
+
+
+		}
+
+		{
+			SDL_UpdateTexture
+			(
+				texture,
+				NULL,
+				pixels.data(),
+				texWidth * 4
+			);
+		}
+
+		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		SDL_RenderPresent(renderer);
+
+		frames++;
+		const Uint64 end = SDL_GetPerformanceCounter();
+		const static Uint64 freq = SDL_GetPerformanceFrequency();
+		const double seconds = (end - start) / static_cast<double>(freq);
+		if (seconds > 2.0)
+		{
+			std::cout
+				<< frames << " frames in "
+				<< std::setprecision(1) << std::fixed << seconds << " seconds = "
+				<< std::setprecision(1) << std::fixed << frames / seconds << " FPS ("
+				<< std::setprecision(3) << std::fixed << (seconds * 1000.0) / frames << " ms/frame)"
+				<< std::endl;
+			start = end;
+			frames = 0;
+		}
+
+
+		std::cout << "\nDone.\n";
+		string t;
+		std::getline(std::cin, t);
+
+
+
+
+
+
+
+	}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -213,130 +426,381 @@ int main(int argc, char** argv)
 			}
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_W == event.key.keysym.scancode)
-				playerPosition.z += 0.5;
+				playerPosition.pos.z += 0.5;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_S == event.key.keysym.scancode)
-				playerPosition.z -= 0.5;
+				playerPosition.pos.z -= 0.5;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_A == event.key.keysym.scancode)
-				playerPosition.x += 0.5;
+				playerPosition.pos.x += 0.5;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_D == event.key.keysym.scancode)
-				playerPosition.x -= 0.5;
+				playerPosition.pos.x -= 0.5;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_Q == event.key.keysym.scancode)
-				playerPosition.y += 0.5;
+				playerPosition.pos.y += 0.5;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_E == event.key.keysym.scancode)
-				playerPosition.y -= 0.5;
+				playerPosition.pos.y -= 0.5;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_LEFT == event.key.keysym.scancode)
-				playerPosition.rot_x -= 10;
+				playerPosition.rot.z -= 5;
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_RIGHT == event.key.keysym.scancode)
-				playerPosition.rot_x += 10;
+				playerPosition.rot.z += 5;
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_UP == event.key.keysym.scancode)
-				playerPosition.rot_y -= 10;
+				playerPosition.rot.y += 5;
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_DOWN == event.key.keysym.scancode)
-				playerPosition.rot_y += 10;
+				playerPosition.rot.y -= 5;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_R == event.key.keysym.scancode)
-				playerPosition.rot_z += 10;
+				playerPosition.rot.x += 5;
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_F == event.key.keysym.scancode)
-				playerPosition.rot_z -= 10;
+				playerPosition.rot.x -= 5;
+
+			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_U == event.key.keysym.scancode)
+			{
+				MEM_MAP.submaps[52 + (51 * 100) + (50 * 10000)] = 0;
+				MEM_MAP.submaps[53 + (51 * 100) + (50 * 10000)] = &ax;
+			}
+
+			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_I == event.key.keysym.scancode)
+			{
+				MEM_MAP.submaps[52 + (51 * 100) + (50 * 10000)] = &ax;
+				MEM_MAP.submaps[53 + (51 * 100) + (50 * 10000)] = 0;
+			}
+			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_O == event.key.keysym.scancode)
+				ax.fill.g = (ax.fill.g + 10) % 256;
+
+			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_T == event.key.keysym.scancode)
+				fov += 10;
+			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_G == event.key.keysym.scancode)
+				fov -= 10;
+
+			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_B == event.key.keysym.scancode)
+				fov_2 += 1;
+			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_N == event.key.keysym.scancode)
+				fov_2 -= 1;
+			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_M == event.key.keysym.scancode)
+				mode = (mode + 1) % 8;
 		}
 
 
-
-		for (unsigned int y = 0; y < height; y += 3)
 		{
-			for (unsigned int x = 0; x < width; x += 3)
+			const auto aspect_ratio = (double)width / height;
+			const int samples_per_pixel = 1;
+			const int max_depth = 50;
+
+
+
+
+			point3 lookfrom(
+				playerPosition.pos.x, 
+				playerPosition.pos.y, 
+				playerPosition.pos.z
+			);
+
+			Point look;
+			look.rot.x = playerPosition.rot.x;
+			look.rot.y = playerPosition.rot.y;
+			look.rot.z = playerPosition.rot.z;
+
+			getRotatedVec(&look, false);
+
+			//point3 lookat(
+			//	playerPosition.pos.x + look.pos.x * 10,
+			//	playerPosition.pos.y + look.pos.y * 10,
+			//	playerPosition.pos.z + look.pos.z * 10
+			//);
+
+
+			point3 lookat(
+				playerPosition.pos.x + playerPosition.rot.x,
+				playerPosition.pos.y + playerPosition.rot.y,
+				playerPosition.pos.z + playerPosition.rot.z 
+			);
+
+			vec3 vup(0, 1, 0);
+			double dist_to_focus = 1;
+			double aperture = 1;
+
+			camera cam = *new camera(lookfrom, lookat, vup, fov, aspect_ratio, aperture, dist_to_focus);
+
+
+			for (int j = height - 1; j >= 0; j -= 1)
 			{
-				Point ray;
-				ray.x = playerPosition.x;
-				ray.y = playerPosition.y;
-				ray.z = playerPosition.z;
-				ray.rot_x = playerPosition.rot_x;
-				ray.rot_y = playerPosition.rot_y;
-				ray.rot_z = playerPosition.rot_z;
-
-				ray.rot_y += (((double)y - ((height - 1) / 2.0f)) / (height - 1)) * fov;
-				ray.rot_x += (((double)x - ((width-1) / 2.0f)) / (width - 1)) * fov;
-				
-				double step = 0.1;
-				int dis = 70;
-
-				Pixeldata* pixl = 0;
-
+				//std::cout << "\rScanlines remaining: " << j << ' ' << std::flush;
+				for (int i = 0; i < width; i += 1)
 				{
-					double ray_move_x = 0;
-					double ray_move_y = 0;
-					double ray_move_z = 0;
+					//color pixel_color(0, 0, 0); 
+					for (int s = 0; s < samples_per_pixel; ++s) {
+						//auto u = (i + random_double()) / (width - 1);
+						//auto v = (j + random_double()) / (height - 1);
+						auto u = (double)i / (width - 1);
+						auto v = (double)j / (height - 1);
+						ray r = cam.get_ray(u, v);
+						//pixel_color += ray_color(r, world, max_depth);
 
-					ray_move_x += sin(ray.rot_x * PI / 180) * step;
-					ray_move_y += cos(ray.rot_x * PI / 180) * step;
-					ray_move_y += sin(ray.rot_y * PI / 180) * step;
-					ray_move_z += cos(ray.rot_y * PI / 180) * step;
-					ray_move_z += sin(ray.rot_z * PI / 180) * step;
-					ray_move_x += cos(ray.rot_z * PI / 180) * step;
+						Vector3 pos, mov;
+						pos.x = r.orig.x();
+						pos.y = r.orig.y();
+						pos.z = r.orig.z();
+						
+						mov.x = r.dir.x() / 50;
+						mov.y = r.dir.y() / 50;
+						mov.z = r.dir.z() / 50;
 
-					//ray_move_x += cos(ray.rot_x * PI / 180) * step;
-					//ray_move_y += cos(ray.rot_y * PI / 180) * step;
-					//ray_move_z += cos(ray.rot_z * PI / 180) * step;
+						
 
-					while (dis > 0)
-					{
-						Pixeldata* currentPixel = MEM_MAP.getPixel(ray.x, ray.y, ray.z);
 
-						if (currentPixel != 0)
+
+						if (mode != 0)
 						{
+
+							int intarray[3] = { 0,0,0 };
+
+							intarray[0] = (int)(((mov.x + 1) / 2) * fov_2 * 255) * ((mode / 1) % 2);
+							intarray[1] = (int)(((mov.y + 1) / 2) * fov_2 * 255) * ((mode / 2) % 2);
+							intarray[2] = (int)(((mov.z + 1) / 2) * fov_2 * 255) * ((mode / 4) % 2);
+
+
+
+
+							int* temprgb = intarray;
+							const unsigned int offset = (texWidth * 4 * ((height - 1) - j)) + i * 4;
+							pixels[offset + 0] = temprgb[2];       // b
+							pixels[offset + 1] = temprgb[1];       // g
+							pixels[offset + 2] = temprgb[0];       // r
+							pixels[offset + 3] = SDL_ALPHA_OPAQUE; // a
+
+
+							continue;
+						}
+
+						int dis = 200;
+						Pixeldata* pixl = 0;
+						Pixeldata* currentPixel = 0;
+						while (dis > 0)
+						{
+							currentPixel = MEM_MAP.getPixel(pos.x, pos.y, pos.z);
+
+							if (currentPixel == 0)
+							{
+								pos.x += mov.x;
+								pos.y += mov.y;
+								pos.z += mov.z;
+								dis--;
+								continue;
+							}
+
+
 							pixl = currentPixel;
 							break;
 						}
 
-						ray.x += ray_move_x;
-						ray.y += ray_move_y;
-						ray.z += ray_move_z;
-						dis--;
+
+						//COL temp = get_color(pixel_color, samples_per_pixel);
+
+
+						//int intarray[3] = { temp.r,temp.g,temp.b };
+						int intarray[3] = { 0,0,0 };
+						if (pixl != 0)
+						{
+							intarray[0] = pixl->r;
+							intarray[1] = pixl->g;
+							intarray[2] = pixl->b;
+							//cout << "DIR: " << 20 * mov.x << ", " << 20 * mov.y << ", " << 20 * mov.z << ".\n";
+						}
+						int* temprgb = intarray;
+
+						const unsigned int offset = (texWidth * 4 * ((height - 1) - j)) + i * 4;
+						pixels[offset + 0] = temprgb[2];       // b
+						pixels[offset + 1] = temprgb[1];       // g
+						pixels[offset + 2] = temprgb[0];       // r
+						pixels[offset + 3] = SDL_ALPHA_OPAQUE; // a
+
+
 					}
 
 
 				}
-				int* temprgb;
-				
-				if (pixl == 0)
-				{
-					int intarray[3] = {0,0,0};
-					temprgb = intarray; 
-				}
-				else
-				{
-					//temprgb = rgbinttointarray(rgbtoint(pixl->r, pixl->g, pixl->b));
-					int intarray[3] = {pixl->r,pixl->g,pixl->b};
-					//intarray[0] = (int)((float)intarray[0] * ((3 + cos(ray.rot_x * PI / 180))) / 4.0f);
-					//intarray[1] = (int)((float)intarray[1] * ((3 + cos(ray.rot_x * PI / 180))) / 4.0f);
-					//intarray[2] = (int)((float)intarray[2] * ((3 + cos(ray.rot_x * PI / 180))) / 4.0f);
-					//intarray[2] = (dis * 10);
-					//if (intarray[2] > 255)
-					//	intarray[2] = 255;
-					temprgb = intarray;
-				}
-				
-				
-				
-				//int*  temprgb = rgbinttointarray(rgbtoint(x % 256, y % 256, CPU_TICK_COUNTER % 256));
 
 
-
-				const unsigned int offset = (texWidth * 4 * y) + x * 4;
-				pixels[offset + 0] = temprgb[2];       // b
-				pixels[offset + 1] = temprgb[1];       // g
-				pixels[offset + 2] = temprgb[0];       // r
-				pixels[offset + 3] = SDL_ALPHA_OPAQUE; // a
 			}
+			/*
+			//Point ray;
+			//Point dir;
+			for (unsigned int y = 0; y < height; y += 2)
+			{
+				for (unsigned int x = 0; x < width; x += 2)
+				{
+
+
+
+
+
+
+					
+						ray.pos.x = playerPosition.pos.x;
+						ray.pos.y = playerPosition.pos.y;
+						ray.pos.z = playerPosition.pos.z;
+						ray.rot.x = playerPosition.rot.x;
+						ray.rot.y = playerPosition.rot.y;
+						ray.rot.z = playerPosition.rot.z;
+
+						ray.rot.y += (((double)y - ((height - 1) / 2.0f)) / (height - 1)) * fov;
+						ray.rot.x += (((double)x - ((width - 1) / 2.0f)) / (width - 1)) * fov;
+
+						//ray.rot_y += (asin((((double)y - ((height - 1) / 2.0f)) / (height - 1))) / pi_a) / fov;
+						//ray.rot_x += (asin((((double)x - ((width - 1) / 2.0f)) / (width - 1))) / pi_a) / fov;
+
+						//ray.rot_y += (asin(((double)y / (height - 1))) / pi_a) / fov;
+						//ray.rot_x += (asin(((double)x / (width - 1))) / pi_a) / fov;
+
+						double step = 0.05;
+						int dis = 70;
+
+						Pixeldata* pixl = 0;
+
+						{
+							double ray_move_x = 0;
+							double ray_move_y = 0;
+							double ray_move_z = 0;
+
+
+							//ray_move_x += sin(ray.rot_x * pi_a) * step;
+							//ray_move_y += cos(ray.rot_x * pi_a) * step;
+							//ray_move_y += sin(ray.rot_y * pi_a) * step;
+							//ray_move_z += cos(ray.rot_y * pi_a) * step;
+							//ray_move_z += sin(ray.rot_z * pi_a) * step;
+							//ray_move_x += cos(ray.rot_z * pi_a) * step;
+
+							ray_move_y += (cos(ray.rot.x * pi_a) - sin(ray.rot.x * pi_a));
+							ray_move_z += (cos(ray.rot.x * pi_a) + sin(ray.rot.x * pi_a));
+
+							ray_move_z += (cos(ray.rot.y * pi_a) - sin(ray.rot.y * pi_a));
+							ray_move_x += (cos(ray.rot.y * pi_a) + sin(ray.rot.y * pi_a));
+
+							ray_move_x += (cos(ray.rot.z * pi_a) - sin(ray.rot.z * pi_a));
+							ray_move_y += (cos(ray.rot.z * pi_a) + sin(ray.rot.z * pi_a));
+
+
+							//{
+							//	double mod = 0.0;
+
+							//	mod += ray_move_x * ray_move_x;
+							//	mod += ray_move_y * ray_move_y;
+							//	mod += ray_move_z * ray_move_z;
+
+							//	double mag = std::sqrt(mod);
+
+							//	if (mag != 0) 
+							//	{
+							//		ray_move_x /= mag;
+							//		ray_move_y /= mag;
+							//		ray_move_z /= mag;
+							//	}
+							//}
+
+
+							ray_move_x *= step;
+							ray_move_y *= step;
+							ray_move_z *= step;
+
+
+
+
+							if (mode != 0)
+							{
+
+								int intarray[3] = { 0,0,0 };
+
+								intarray[0] = (int)(((ray_move_x + 1) / 2) * fov_2 * 255) * ((mode / 1) % 2);
+								intarray[1] = (int)(((ray_move_y + 1) / 2) * fov_2 * 255) * ((mode / 2) % 2);
+								intarray[2] = (int)(((ray_move_z + 1) / 2) * fov_2 * 255) * ((mode / 4) % 2);
+
+							
+
+
+								int* temprgb = intarray;
+								const unsigned int offset = (texWidth * 4 * y) + x * 4;
+								pixels[offset + 0] = temprgb[2];       // b
+								pixels[offset + 1] = temprgb[1];       // g
+								pixels[offset + 2] = temprgb[0];       // r
+								pixels[offset + 3] = SDL_ALPHA_OPAQUE; // a
+
+								continue;
+							}
+
+
+
+
+
+
+							Pixeldata* currentPixel = 0;
+							while (dis > 0)
+							{
+								currentPixel = MEM_MAP.getPixel(ray.pos.x, ray.pos.y, ray.pos.z);
+
+								if (currentPixel == 0)
+								{
+									ray.pos.x += ray_move_x;
+									ray.pos.y += ray_move_y;
+									ray.pos.z += ray_move_z;
+									dis--;
+									continue;
+								}
+
+
+								pixl = currentPixel;
+								break;
+							}
+
+
+						}
+						int intarray[3] = { 0,0,0 };
+
+
+
+
+
+						if (pixl != 0)
+						{
+							intarray[0] = { pixl->r,};
+							intarray[1] = { pixl->g };
+							intarray[2] = { pixl->b };
+						}
+						else
+						{
+							//temprgb = rgbinttointarray(rgbtoint(pixl->r, pixl->g, pixl->b));
+								//int intarray[3] = { pixl->r,pixl->g,pixl->b };
+							//intarray[0] = (int)((float)intarray[0] * ((3 + cos(ray.rot_x * PI / 180))) / 4.0f);
+							//intarray[1] = (int)((float)intarray[1] * ((3 + cos(ray.rot_x * PI / 180))) / 4.0f);
+							//intarray[2] = (int)((float)intarray[2] * ((3 + cos(ray.rot_x * PI / 180))) / 4.0f);
+							//intarray[2] = (dis * 10);
+							//if (intarray[2] > 255)
+							//	intarray[2] = 255;
+								//temprgb = intarray;
+						}
+
+
+
+						//int*  temprgb = rgbinttointarray(rgbtoint(x % 256, y % 256, CPU_TICK_COUNTER % 256));
+
+
+
+						const unsigned int offset = (texWidth * 4 * y) + x * 4;
+						pixels[offset + 0] = intarray[2];       // b
+						pixels[offset + 1] = intarray[1];       // g
+						pixels[offset + 2] = intarray[0];       // r
+						pixels[offset + 3] = SDL_ALPHA_OPAQUE; // a
+					
+				}
+			}
+			*/
 		}
 
 
@@ -398,118 +862,10 @@ int main(int argc, char** argv)
 
 	string t;
 
-	std::getline(std::cin, t);
+	//std::getline(std::cin, t);
 
 	return 0;
 }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void mainold()
-{
-	printf("test!");
-	debug_out = true;
-	//int * screenbuffer;
-	//screenbuffer = malloc(250000000);
-	static int screenbuffer[250000000] = {};
-	log_debug("Preparing RAM...", '>');
-
-	for (int i = 0; i < 250000000; i++)
-	{
-		screenbuffer[i] = 0;
-	}
-	log_debug("Done.", '<');
-
-	log_debug("Opening Window", '>');
-	//openglmakewindow();
-	log_debug("Done.", '<');
-
-	log_debug("Drawing Pixels...", '>');
-	//opengldrawframe(screenbuffer);
-	log_debug("Done...", '<');
-
-	int tempcol = rgbtoint(100, 200, 100);
-	for (int y = 0; y < 100; y++)
-	{
-		for (int x = 0; x < 100; x++)
-		{
-			//opengldrawdot(screenbuffer, x, y, tempcol);
-			//screenbuffer[x + (y * 1280)] = rgbtoint(temp, 200, 100);
-		}
-	}
-
-	//openglupdate();
-
-	log_debug("Drawing Pixels...", '>');
-	//opengldrawframe(screenbuffer);
-	log_debug("Done...", '<');
-
-	//char test[10];
-
-	//log_debug("> Waiting for user input");
-
-	//cin.getline(test, 10);
-
-
-	clock_t current_ticks, delta_ticks;
-	clock_t fps = 0;
-	int temp = 0;
-	while (true)
-	{
-		if (temp % 10 == 0)
-			current_ticks = clock();
-		//log_debug("> Drawing demo pixels...");
-		for (int y = 0; y < 500; y++)
-		{
-			for (int x = 0; x < 400; x++)
-			{
-				//opengldrawdot(screenbuffer, x, y, rgbtoint(((temp / 256) / 256) % 256, (temp / 256) % 256, temp % 256));
-				//screenbuffer[x + (y * 1280)] = rgbtoint(((temp / 256) / 256) % 256, (temp / 256) % 256, temp % 256);
-			}
-		}
-
-		//opengldrawframe(screenbuffer);
-		//openglupdate();
-		temp++;
-
-
-		if (temp % 10 == 9)
-		{
-			delta_ticks = clock() - current_ticks; //the time, in ms, that took to render the scene
-			if (delta_ticks > 0)
-				fps = CLOCKS_PER_SEC / (delta_ticks / 10);
-		}
-
-		if (temp % 30 == 0)
-			cout << fps << endl;
-	}
-
-
-
-	//openglclosewindow();
-	log_debug("Exit", 'X');
-}
