@@ -65,10 +65,6 @@ void mapmem3d::setPixel(double x, double y, double z, Pixeldata* pixel)
 	int m_y = (int)y;
 	int m_z = (int)z;
 
-	int s_x = (int)(x * 100) % 100;
-	int s_y = (int)(y * 100) % 100;
-	int s_z = (int)(z * 100) % 100;
-
 	if (m_x < 0 || m_x >= 100)
 		return;
 	if (m_y < 0 || m_y >= 100)
@@ -77,7 +73,12 @@ void mapmem3d::setPixel(double x, double y, double z, Pixeldata* pixel)
 		return;
 
 	if (submaps[m_x + (m_y * 100) + (m_z * 10000)] == 0)
-		return;
+	{
+		Submap* testing = new Submap;
+		submaps[m_x + (m_y * 100) + (m_z * 10000)] = testing;
+		testing->filled = false;
+		
+	}
 
 	Submap* submap = (Submap*)submaps[m_x + (m_y * 100) + (m_z * 10000)];
 
@@ -94,6 +95,10 @@ void mapmem3d::setPixel(double x, double y, double z, Pixeldata* pixel)
 				submap->pixels[i] = &submap->fill;
 		}
 	}
+
+	int s_x = (int)(x * 100) % 100;
+	int s_y = (int)(y * 100) % 100;
+	int s_z = (int)(z * 100) % 100;
 
 	submap->pixels[s_x + (s_y * 100) + (s_z * 10000)] = pixel;
 }

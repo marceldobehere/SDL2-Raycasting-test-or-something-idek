@@ -2,15 +2,15 @@
 
 struct Size3D
 {
-	int x, y, z;
+	int x = 0, y = 0, z = 0;
 };
 
 struct Pixeldata
 {
 	int testing = 123;
 	int yes = 1;
-	bool reflect;
-	int r, g, b;
+	bool reflect = false;
+	int r = 0, g = 0, b = 0;
 	
 
 };
@@ -20,7 +20,7 @@ struct Pixeldata
 struct Submap
 {
 	int testing = 123456;
-	bool filled;
+	bool filled = false;
 	Pixeldata fill;
 	Size3D Size = {100,100,100};
 	//Pixeldata* pixels[];

@@ -70,19 +70,26 @@ struct Point
 
 
 
-void getRotatedVec(Point* point, bool normalize)
+void getRotatedVec(Point* point, bool normalize, bool mult)
 {
-	double ray_move_x = 0;
-	double ray_move_y = 0;
-	double ray_move_z = 0;
+	//double ray_move_x = 0;
+	//double ray_move_y = 0;
+	//double ray_move_z = 0;
 
 
-	ray_move_x += sin(point->rot.x * pi_a);
+	//ray_move_x += sin(point->rot.x * pi_a);
+	//ray_move_y += sin(point->rot.y * pi_a);
+	//ray_move_z += sin(point->rot.z * pi_a);
+
 	//ray_move_z += cos(point->rot.x * pi_a);
-	ray_move_y += sin(point->rot.y * pi_a);
 	//ray_move_z += cos(point->rot.y * pi_a);
-	ray_move_z += sin(point->rot.z * pi_a);
 	//ray_move_y += cos(point->rot.z * pi_a);
+
+
+	double ray_move_x = -cos(point->rot.x * pi_a) * sin(point->rot.y * pi_a);
+	double ray_move_y = sin(point->rot.x * pi_a);
+	double ray_move_z = -cos(point->rot.x * pi_a) * cos(point->rot.y * pi_a);
+
 
 	//ray_move_x += sin(point->rot.x * pi_a);
 	//ray_move_z += cos(point->rot.x * pi_a);
@@ -123,9 +130,18 @@ void getRotatedVec(Point* point, bool normalize)
 		}
 	}
 
-	point->pos.x = ray_move_x;
-	point->pos.y = ray_move_y;
-	point->pos.z = ray_move_z;
+	if (mult)
+	{
+		point->pos.x *= ray_move_x;
+		point->pos.y *= ray_move_y;
+		point->pos.z *= ray_move_z;
+	}
+	else
+	{
+		point->pos.x = ray_move_x;
+		point->pos.y = ray_move_y;
+		point->pos.z = ray_move_z;
+	}
 
 }
 
@@ -196,7 +212,7 @@ int main(int argc, char** argv)
 	playerPosition.pos.y = 52.5;
 	playerPosition.pos.z = 49;
 	playerPosition.rot.x = 0;
-	playerPosition.rot.y = -5;
+	playerPosition.rot.y = -160;
 	playerPosition.rot.z = 5;
 
 	double fov = 90;
@@ -226,39 +242,39 @@ int main(int argc, char** argv)
 
 
 	
-		Pixeldata aaa = *(new Pixeldata);
-		aaa.r = 255;
-		aaa.g = 5;
-		aaa.b = 10;
+		Pixeldata* aaa = (new Pixeldata);
+		aaa->r = 255;
+		aaa->g = 5;
+		aaa->b = 10;
 
-		Submap xaa = *(new Submap);
-		xaa.filled = true;
-		xaa.fill = aaa;
+		Submap* xaa = (new Submap);
+		xaa->filled = true;
+		xaa->fill = *aaa;
 
-		cout << "TEST1: " << xaa.testing << "\n";
+		cout << "TEST1: " << xaa->testing << "\n";
 
-		MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)] = &xaa;
+		MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)] = xaa;
 
 		cout << "TEST2: " << MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)]->testing << "\n";
 
-		Pixeldata qaaa = *(new Pixeldata);
-		qaaa.r = 10;
-		qaaa.g = 15;
-		qaaa.b = 244;
+		Pixeldata* qaaa = (new Pixeldata);
+		qaaa->r = 10;
+		qaaa->g = 15;
+		qaaa->b = 244;
 
 		Submap ax = *(new Submap);
 		ax.filled = false;
-		ax.fill = qaaa;
+		ax.fill = *qaaa;
 
 		for (int i = 0; i < 10000; i += 1)
 		{
-			ax.pixels[i + 0] = &qaaa;
+			ax.pixels[i + 0] = qaaa;
 		}
 
 		for (int i = 10000; i < 100000; i += 2)
 		{
-			ax.pixels[i + 0] = &qaaa;
-			ax.pixels[i + 1] = &aaa;
+			ax.pixels[i + 0] = qaaa;
+			ax.pixels[i + 1] = aaa;
 		}
 
 		for (int i = 100000; i < 1000000; i += 3)
@@ -280,7 +296,28 @@ int main(int argc, char** argv)
 
 
 
+	{
+		for (int movz = 0; movz < 256; movz++)
+		{
+			for (int movy = 0; movy < 256; movy++)
+			{
+				for (int movx = 0; movx < 256; movx++)
+				{
+					Pixeldata* temp_pixl = (new Pixeldata);
+					temp_pixl->r = movx;
+					temp_pixl->g = movy;
+					temp_pixl->b = movz;
+					temp_pixl->reflect = true;
 
+					MEM_MAP.setPixel(50 + (movx * 0.01), 50 + (movy * 0.01), 51 + (movz * 0.01), temp_pixl);
+
+				}
+			}
+		}
+
+
+
+	}
 
 
 
@@ -395,7 +432,8 @@ int main(int argc, char** argv)
 
 
 
-
+	Point* temp_move = new Point;
+	Point* temp_move_2 = new Point;
 
 
 
@@ -412,6 +450,10 @@ int main(int argc, char** argv)
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 		SDL_RenderClear(renderer);
 
+		temp_move->pos.x = 0;
+		temp_move->pos.y = 0;
+		temp_move->pos.z = 0;
+
 		while (SDL_PollEvent(&event))
 		{
 			if ((SDL_QUIT == event.type) || (SDL_KEYDOWN == event.type && SDL_SCANCODE_ESCAPE == event.key.keysym.scancode))
@@ -426,40 +468,40 @@ int main(int argc, char** argv)
 			}
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_W == event.key.keysym.scancode)
-				playerPosition.pos.z += 0.5;
+				temp_move->pos.z += 0.25;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_S == event.key.keysym.scancode)
-				playerPosition.pos.z -= 0.5;
+				temp_move->pos.z -= 0.25;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_A == event.key.keysym.scancode)
-				playerPosition.pos.x += 0.5;
+				temp_move->pos.x += 0.25;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_D == event.key.keysym.scancode)
-				playerPosition.pos.x -= 0.5;
+				temp_move->pos.x -= 0.25;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_Q == event.key.keysym.scancode)
-				playerPosition.pos.y += 0.5;
+				temp_move->pos.y -= 0.25;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_E == event.key.keysym.scancode)
-				playerPosition.pos.y -= 0.5;
+				temp_move->pos.y += 0.25;
 			
-			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_LEFT == event.key.keysym.scancode)
-				playerPosition.rot.z -= 5;
-
-			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_RIGHT == event.key.keysym.scancode)
-				playerPosition.rot.z += 5;
+			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_DOWN == event.key.keysym.scancode)
+				playerPosition.rot.x -= 5;
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_UP == event.key.keysym.scancode)
+				playerPosition.rot.x += 5;
+
+			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_LEFT == event.key.keysym.scancode)
 				playerPosition.rot.y += 5;
 
-			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_DOWN == event.key.keysym.scancode)
+			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_RIGHT == event.key.keysym.scancode)
 				playerPosition.rot.y -= 5;
 			
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_R == event.key.keysym.scancode)
-				playerPosition.rot.x += 5;
+				playerPosition.rot.z += 2.5;
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_F == event.key.keysym.scancode)
-				playerPosition.rot.x -= 5;
+				playerPosition.rot.z -= 2.5;
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_U == event.key.keysym.scancode)
 			{
@@ -489,6 +531,43 @@ int main(int argc, char** argv)
 		}
 
 
+		if (temp_move->pos.x != 0 || temp_move->pos.y != 0 || temp_move->pos.z != 0)
+		{
+			temp_move_2->rot.x = playerPosition.rot.x;
+			temp_move_2->rot.y = playerPosition.rot.y;
+			temp_move_2->rot.z = playerPosition.rot.z;
+
+			getRotatedVec(temp_move_2, false, false);
+
+
+			playerPosition.pos.x += temp_move_2->pos.x * temp_move->pos.z;
+			playerPosition.pos.y += temp_move_2->pos.y * temp_move->pos.z;
+			playerPosition.pos.z += temp_move_2->pos.z * temp_move->pos.z;
+
+
+			temp_move_2->rot.x += 90;
+			getRotatedVec(temp_move_2, false, false);
+
+			playerPosition.pos.x += temp_move_2->pos.x * temp_move->pos.y;
+			playerPosition.pos.y += temp_move_2->pos.y * temp_move->pos.y;
+			playerPosition.pos.z += temp_move_2->pos.z * temp_move->pos.y;
+
+
+			temp_move_2->rot.x -= 90;
+			//temp_move_2->rot.z += 90;
+			temp_move_2->rot.y += 90;
+			getRotatedVec(temp_move_2, false, false);
+
+			playerPosition.pos.x += temp_move_2->pos.x * temp_move->pos.x;
+			playerPosition.pos.y -= temp_move_2->pos.y * temp_move->pos.x;
+			playerPosition.pos.z += temp_move_2->pos.z * temp_move->pos.x;
+		}
+
+
+
+
+
+
 		{
 			const auto aspect_ratio = (double)width / height;
 			const int samples_per_pixel = 1;
@@ -508,20 +587,20 @@ int main(int argc, char** argv)
 			look.rot.y = playerPosition.rot.y;
 			look.rot.z = playerPosition.rot.z;
 
-			getRotatedVec(&look, false);
-
-			//point3 lookat(
-			//	playerPosition.pos.x + look.pos.x * 10,
-			//	playerPosition.pos.y + look.pos.y * 10,
-			//	playerPosition.pos.z + look.pos.z * 10
-			//);
-
+			getRotatedVec(&look, false, false);
 
 			point3 lookat(
-				playerPosition.pos.x + playerPosition.rot.x,
-				playerPosition.pos.y + playerPosition.rot.y,
-				playerPosition.pos.z + playerPosition.rot.z 
+				playerPosition.pos.x + look.pos.x,
+				playerPosition.pos.y + look.pos.y ,
+				playerPosition.pos.z + look.pos.z
 			);
+
+
+			//point3 lookat(
+			//	playerPosition.pos.x + playerPosition.rot.x,
+			//	playerPosition.pos.y + playerPosition.rot.y,
+			//	playerPosition.pos.z + playerPosition.rot.z 
+			//);
 
 			vec3 vup(0, 1, 0);
 			double dist_to_focus = 1;
