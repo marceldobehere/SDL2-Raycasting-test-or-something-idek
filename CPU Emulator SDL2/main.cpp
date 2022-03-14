@@ -297,7 +297,7 @@ int main(int argc, char** argv)
 
 
 	{
-		for (int movz = 0; movz < 256; movz++)
+		for (int movz = 0; movz < 10; movz++)
 		{
 			for (int movy = 0; movy < 256; movy++)
 			{
@@ -315,6 +315,26 @@ int main(int argc, char** argv)
 			}
 		}
 
+
+		for (int movz = -50; movz < 51; movz++)
+		{
+			for (int movy = -50; movy < 51; movy++)
+			{
+				for (int movx = -50; movx < 51; movx++)
+				{
+					Pixeldata* temp_pixl = (new Pixeldata);
+					temp_pixl->r = (movx + 50) * 2;
+					temp_pixl->g = (movy + 50) * 2;
+					temp_pixl->b = (movz + 50) * 2;
+					temp_pixl->reflect = true;
+
+					int oof = ((movx * movx) + (movy * movy) + (movz * movz));
+					if (oof < 50 * 50 && oof > 46 * 46)
+						MEM_MAP.setPixel(51 + (movx * 0.01), 54 + (movy * 0.01), 51 + (movz * 0.01), temp_pixl);
+
+				}
+			}
+		}
 
 
 	}
