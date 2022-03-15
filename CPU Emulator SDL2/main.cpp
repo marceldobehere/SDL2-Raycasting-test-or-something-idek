@@ -635,8 +635,20 @@ int main(int argc, char** argv)
 			double dist_to_focus = 1;
 			double aperture = 1;
 
-			camera cam = *new camera(lookfrom, lookat, vup, fov, aspect_ratio, aperture, dist_to_focus);
+			//camera cam = *new camera(lookfrom, lookat, vup, fov, aspect_ratio, aperture, dist_to_focus);
 
+			auto theta = degrees_to_radians(fov);
+			auto h = tan(theta / 2);
+			auto viewport_height = 2.0 * h;
+			auto viewport_width = aspect_ratio * viewport_height;
+
+			auto w = unit_vector(lookfrom - lookat);
+			auto u = unit_vector(cross(vup, w));
+			auto v = cross(w, u);
+
+			vec3 horizontal = dist_to_focus * viewport_width * u;
+			vec3 vertical = dist_to_focus * viewport_height * v;
+			vec3 lower_left_corner = lookfrom - horizontal / 2 - vertical / 2 - dist_to_focus * w;
 
 			for (int j = height - 1; j >= 0; j -= 1)
 			{
@@ -649,19 +661,35 @@ int main(int argc, char** argv)
 						//auto v = (j + random_double()) / (height - 1);
 						auto u = (double)i / (width - 1);
 						auto v = (double)j / (height - 1);
-						ray r = cam.get_ray(u, v);
+						//ray r = cam.get_ray(u, v);
 						//pixel_color += ray_color(r, world, max_depth);
 
 						Vector3 pos, mov;
-						pos.x = r.orig.x();
-						pos.y = r.orig.y();
-						pos.z = r.orig.z();
+						pos.x = playerPosition.pos.x;
+						pos.y = playerPosition.pos.y;
+						pos.z = playerPosition.pos.z;
 						
-						mov.x = r.dir.x() / 50;
-						mov.y = r.dir.y() / 50;
-						mov.z = r.dir.z() / 50;
 
+						vec3 tempvec3 = (lower_left_corner + u * horizontal + v * vertical - lookfrom);
+
+						//mov.x = r.dir.x() / 50;
+						//mov.y = r.dir.y() / 50;
+						//mov.z = r.dir.z() / 50;
+
+						mov.x = tempvec3.x() / 50;
+						mov.y = tempvec3.y() / 50;
+						mov.z = tempvec3.z() / 50;
 						
+						//{
+						//	Point test;
+						//	test.rot.x = playerPosition.rot.x + (((double)((height - 1) - j) - ((height - 1) / 2.0f)) / (height - 1)) * fov;
+						//	test.rot.y = playerPosition.rot.y + (((double)i - ((width - 1) / 2.0f)) / (width - 1)) * fov;
+						//	getRotatedVec(&test, false, false);
+						//	mov.x = test.pos.x / 50;
+						//	mov.y = test.pos.y / 50;
+						//	mov.z = test.pos.z / 50;
+						//}
+
 
 
 

@@ -10,7 +10,7 @@ struct Pixeldata
 	int testing = 123;
 	int yes = 1;
 	bool reflect = false;
-	int r = 0, g = 0, b = 0;
+	int r = 0, g = 0, b = 0, a=0;
 	
 
 };
