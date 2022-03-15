@@ -55,8 +55,10 @@ Pixeldata* mapmem3d::getPixel(double x, double y, double z)
 	//else
 		//printf(" - OK\n");
 	
+	Pixeldata* temp = submap->pixels[s_x + (s_y * 100) + (s_z * 10000)];
 
-	return (Pixeldata*)submap->pixels[s_x + (s_y * 100) + (s_z * 10000)];
+
+	return temp;
 }
 
 void mapmem3d::setPixel(double x, double y, double z, Pixeldata* pixel)
