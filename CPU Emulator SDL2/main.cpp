@@ -9,6 +9,7 @@ using namespace std;
 
 
 
+
 #include <SDL.h>
 #include <iostream>
 #include <iomanip>
@@ -26,6 +27,16 @@ using namespace std;
 #define pi_a 0.017453292519943295
 
 bool debug_out = true;
+
+
+
+struct Point
+{
+	Vector3 pos, rot;
+};
+
+
+
 
 int rgbtoint(int r, int g, int b)
 {
@@ -59,21 +70,6 @@ void log(const char a[], char sign)
 	printf(a);
 	printf("\n");
 }
-
-
-struct Vector3
-{
-	double x, y, z;
-};
-
-
-
-
-
-struct Point
-{
-	Vector3 pos, rot;
-};
 
 
 
@@ -159,7 +155,7 @@ void getRotatedVec(Point* point, bool normalize, bool mult)
 
 
 
-void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos)
+void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos, Vector3* scale)
 {
 	tuple<int, char*> testing = ReadFile(filename);
 
@@ -211,7 +207,7 @@ void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos)
 		{
 			for (int x = 0; x < size_x; x++)
 			{
-				MEM_MAP->setPixel((pos->x + x / 100.0), (pos->y + y / 100.0), (pos->z + z / 100.0), pixels[ConvertCharPointerToShort(&data[addr + 8])]);
+				MEM_MAP->setPixel((pos->x + (x / 100.0 * scale->x)), (pos->y + (y / 100.0 * scale->y)), (pos->z + (z / 100.0 * scale->z)), pixels[ConvertCharPointerToShort(&data[addr])], scale);
 				addr += 2;
 			}
 		}
@@ -419,21 +415,33 @@ int main(int argc, char** argv)
 
 
 
-	
+	Vector3 scale;
+	scale.x = 4;
+	scale.y = 4;
+	scale.z = 4;
 	Vector3 pos_test;
 	pos_test.x = 48;
 	pos_test.y = 52;
 	pos_test.z = 50;
-	LoadObj("objs\\3d test.png.mrof", &MEM_MAP, &pos_test);
+	LoadObj("objs\\3d test.png.mrof", &MEM_MAP, &pos_test, &scale);
 
 	pos_test.x = 49;
 	pos_test.y = 52;
 	pos_test.z = 50;
-	LoadObj("objs\\testing.png.mrof", &MEM_MAP, &pos_test);
+	scale.x = 1;
+	scale.y = 1;
+	scale.z = 1;
+	LoadObj("objs\\testing.png.mrof", &MEM_MAP, &pos_test, &scale);
 
+	//slices.png.mrof
 
-
-
+	pos_test.x = 52;
+	pos_test.y = 53;
+	pos_test.z = 50;
+	scale.x = 5;
+	scale.y = 8;
+	scale.z = 5;
+	LoadObj("objs\\out.png.mrof", &MEM_MAP, &pos_test, &scale);
 
 
 

@@ -79,7 +79,7 @@ void mapmem3d::setPixel(double x, double y, double z, Pixeldata* pixel)
 		Submap* testing = new Submap;
 		submaps[m_x + (m_y * 100) + (m_z * 10000)] = testing;
 		testing->filled = false;
-		
+
 	}
 
 	Submap* submap = (Submap*)submaps[m_x + (m_y * 100) + (m_z * 10000)];
@@ -93,7 +93,7 @@ void mapmem3d::setPixel(double x, double y, double z, Pixeldata* pixel)
 		{
 			submap->filled = false;
 
-			for (int i = 0; i < 100*100*100; i++)
+			for (int i = 0; i < 100 * 100 * 100; i++)
 				submap->pixels[i] = &submap->fill;
 		}
 	}
@@ -103,4 +103,13 @@ void mapmem3d::setPixel(double x, double y, double z, Pixeldata* pixel)
 	int s_z = (int)(z * 100) % 100;
 
 	submap->pixels[s_x + (s_y * 100) + (s_z * 10000)] = pixel;
+}
+
+
+void mapmem3d::setPixel(double x_, double y_, double z_, Pixeldata* pixel, Vector3* scale)
+{
+	for (int y = 0; y < scale->y; y++)
+		for (int z = 0; z < scale->z; z++)
+			for (int x = 0; x < scale->x; x++)
+				mapmem3d::setPixel(x_ + (x/100.0), y_ + (y / 100.0), z_ + (z / 100.0), pixel);
 }

@@ -15,6 +15,10 @@ struct Pixeldata
 
 };
 
+struct Vector3
+{
+	double x, y, z;
+};
 
 
 struct Submap
@@ -38,5 +42,5 @@ public:
 	void init();
 	Pixeldata* getPixel(double x, double y, double z);
 	void setPixel(double x, double y, double z, Pixeldata* pixel);
-
+	void setPixel(double x, double y, double z, Pixeldata* pixel, Vector3* scale);
 };
