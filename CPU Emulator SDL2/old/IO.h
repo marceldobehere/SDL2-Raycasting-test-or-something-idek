@@ -32,7 +32,7 @@ std::tuple<int, char*> ReadFile(const char* filename)
 
 int ConvertCharPointerToInt(char* pointer)
 {
-	bool* target = new bool[32];
+	bool target[32];
 	for (int byteshift = 0; byteshift < 32; byteshift += 8)
 		for (int bitshift = 0; bitshift < 8; bitshift++)
 			target[bitshift + byteshift] = ((pointer[byteshift / 8] >> bitshift) & 1) == 1;
@@ -49,7 +49,7 @@ int ConvertCharPointerToInt(char* pointer)
 
 int ConvertCharPointerToShort(char* pointer)
 {
-	bool* target = new bool[16];
+	bool target[16];
 	for (int byteshift = 0; byteshift < 16; byteshift += 8)
 		for (int bitshift = 0; bitshift < 8; bitshift++)
 			target[bitshift + byteshift] = ((pointer[byteshift / 8] >> bitshift) & 1) == 1;
@@ -62,6 +62,14 @@ int ConvertCharPointerToShort(char* pointer)
 		base *= 2;
 	}
 	return test2;
+}
+
+
+double ConvertCharPointerToDouble(char* pointer)
+{
+	double d = 0;
+	memcpy(&d, pointer, sizeof d);
+	return d;
 }
 
 
@@ -94,7 +102,7 @@ std::tuple<int, int*> ReadFile_old(const char* filename)
 	{
 		myfile.read(test, 4);
 
-		bool* target = new bool[32];
+		bool target[32];
 		for (int byteshift = 0; byteshift < 32; byteshift += 8)
 			for (int bitshift = 0; bitshift < 8; bitshift++)
 				target[bitshift + byteshift] = ((test[byteshift / 8] >> bitshift) & 1) == 1;

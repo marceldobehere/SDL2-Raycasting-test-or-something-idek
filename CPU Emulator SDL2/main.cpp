@@ -2,9 +2,9 @@ using namespace std;
 
 
 // TODO
-// MAKE PNG SLICE TO RAYCAST OBJECT FILE CONVERTER IN C# (GET PNG SLICES FROM GOXEL OR SOMETHING) 
-// MAKE A SCENE FILE WHICH HAS/LINKS TO THOSE OBJECT FILES (AND THEIR POSITIONS) WHICH GET LOADED INTO THE 3D MAP AT START OF THE PROGRAM
-// POSSIBLY OPTIMIZE THAT LOADING
+// ADD LIGHT SOURCE(s)
+// ADD Distorting angle depending on volume/density whatever
+// ADD RENDERING OPTIMIZATIONS
 // PROFIT
 
 
@@ -34,6 +34,8 @@ struct Point
 {
 	Vector3 pos, rot;
 };
+
+
 
 
 
@@ -179,12 +181,31 @@ void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos, Vector3* sca
 		pixels[i]->r = ConvertCharPointerToShort(&data[addr + 0]);
 		pixels[i]->g = ConvertCharPointerToShort(&data[addr + 2]);
 		pixels[i]->b = ConvertCharPointerToShort(&data[addr + 4]);
-		pixels[i]->a = ConvertCharPointerToShort(&data[addr + 8]);
+		pixels[i]->a = ConvertCharPointerToShort(&data[addr + 6]);
 
-		if (ConvertCharPointerToShort(&data[addr + 10]) == 1)
+		//cout << " - TEMP: " << ConvertCharPointerToShort(&data[addr + 8]) << "\n";
+
+		if (ConvertCharPointerToShort(&data[addr + 8]) == 1)
 			pixels[i]->reflect = true;
 		else
 			pixels[i]->reflect = false;
+
+		if (ConvertCharPointerToShort(&data[addr + 10]) == 1)
+			pixels[i]->def_normal = true;
+		else
+			pixels[i]->def_normal = false;
+
+		if (ConvertCharPointerToShort(&data[addr + 12]) == 1)
+			pixels[i]->light = true;
+		else
+			pixels[i]->light = false;
+
+		
+		pixels[i]->normal_x = ConvertCharPointerToDouble(&data[addr + 14 + (0 * 8)]);
+		pixels[i]->normal_y = ConvertCharPointerToDouble(&data[addr + 14 + (1 * 8)]);
+		pixels[i]->normal_z = ConvertCharPointerToDouble(&data[addr + 14 + (2 * 8)]);
+
+		//cout << "NORMS: " << pixels[i]->normal_x << ", " << pixels[i]->normal_y << ", " << pixels[i]->normal_z << ".\n";
 
 
 		addr += pixelsize * 2;
@@ -201,20 +222,362 @@ void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos, Vector3* sca
 
 	pixels[0] = 0;
 
+
+
 	for (int y = 0; y < size_y; y++)
 	{
 		for (int z = 0; z < size_z; z++)
 		{
 			for (int x = 0; x < size_x; x++)
 			{
-				MEM_MAP->setPixel((pos->x + (x / 100.0 * scale->x)), (pos->y + (y / 100.0 * scale->y)), (pos->z + (z / 100.0 * scale->z)), pixels[ConvertCharPointerToShort(&data[addr])], scale);
-				addr += 2;
+				if (data[4] == 'I')
+				{
+					Pixeldata* temp_pixl = pixels[ConvertCharPointerToInt(&data[addr])];
+					if (temp_pixl != 0)
+						MEM_MAP->setPixel((pos->x + (x / 100.0 * scale->x)), (pos->y + (y / 100.0 * scale->y)), (pos->z + (z / 100.0 * scale->z)), temp_pixl, scale);
+
+					addr += 4;
+				}
+				else
+				{
+					Pixeldata* temp_pixl = pixels[ConvertCharPointerToShort(&data[addr])];
+					if (temp_pixl != 0)
+						MEM_MAP->setPixel((pos->x + (x / 100.0 * scale->x)), (pos->y + (y / 100.0 * scale->y)), (pos->z + (z / 100.0 * scale->z)), temp_pixl, scale);
+
+					addr += 2;
+				}
 			}
 		}
 	}
 
 
 }
+
+
+struct obj
+{
+	Vector3 pos, scale;
+	string filename;
+};
+
+
+
+void LoadScene(const char* filename, mapmem3d* MEM_MAP)
+{
+	cout << "Loading File: \"" << filename << "\".\n";
+	ifstream input(filename);
+
+	for (string line; getline(input, line); )
+	{
+		if (line == "#")
+		{
+			obj a;
+
+			getline(input, line);
+			a.pos.x = stold(line);
+			getline(input, line);
+			a.pos.y = stold(line);
+			getline(input, line);
+			a.pos.z = stold(line);
+
+			getline(input, line);
+
+			getline(input, line);
+			a.scale.x = stold(line);
+			getline(input, line);
+			a.scale.y = stold(line);
+			getline(input, line);
+			a.scale.z = stold(line);
+
+			getline(input, line);
+
+			getline(input, line);
+			a.filename = line;
+
+			LoadObj(a.filename.c_str(), MEM_MAP, &a.pos, &a.scale);
+
+		}
+	}
+}
+
+
+
+
+
+
+
+
+void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* data, int index, int subindex, int* lightcount)
+{
+
+	(*lightcount)++;
+	cout << " - Light " << *lightcount << "   \r";
+	Size3D size = MEM_MAP->Size;
+
+	Size3D size2 = MEM_MAP->submaps[index]->Size;
+
+	Vector3 Position;
+	Position.x = ((index) % size.x); 
+	Position.y = ((index / size.x) % size.y);
+	Position.z = ((index / (size.x * size.y)) % size.z);
+
+	Position.x += ((subindex) % size2.x) / 100.0;
+	Position.y += ((subindex / size2.x) % size2.y) / 100.0;
+	Position.z += ((subindex / (size2.x * size2.y)) % size2.z) / 100.0;
+
+
+	{
+		Lightdata* temp_l = new Lightdata;
+		Light_MEM_MAP->setLightPixel(Position.x, Position.y, Position.z, temp_l);
+	}
+
+
+
+	int hits = 0;
+
+	double res = 0.5;
+	vec3 tempvec3;
+	Point ray_;
+	for (double w1 = 0; w1 < 360; w1 += res)
+	{
+		for (double w2 = -90; w2 < 90; w2 += res)
+		{
+			Vector3 light = Vector3(data->r / 255.0, data->g / 255.0, data->b / 255.0);
+			//light = Vector3(1, 1, 1);
+			{
+				Point mov_;
+				mov_.rot.x = w2;
+				mov_.rot.y = w1;
+				mov_.rot.z = 0;
+				getRotatedVec(&mov_, false, false);
+
+				tempvec3 = vec3(mov_.pos.x, mov_.pos.y, mov_.pos.z);
+			}
+
+			ray_.pos.x = Position.x;
+			ray_.pos.y = Position.y;
+			ray_.pos.z = Position.z;
+
+			Vector3 mov, pos;
+			pos = Vector3(ray_.pos.x, ray_.pos.y, ray_.pos.z);
+			mov = Vector3(tempvec3.x() / 120, tempvec3.y() / 120, tempvec3.z() / 120);
+
+
+			Pixeldata* currentPixel;
+
+			int dis = 600;
+			while (dis > 0 && (light.x + light.y + light.z) > 0.05)
+			{
+				pos.x += mov.x;
+				pos.y += mov.y;
+				pos.z += mov.z;
+				//cout << " - Light: " << *lightcount << " POS: " << pos.x << ", " << pos.y << ", " << pos.z << "DIS:  " << (600-dis) << " HITS:" << hits << "                 \r";
+
+
+				currentPixel = MEM_MAP->getPixel(pos.x, pos.y, pos.z);
+
+
+				if (currentPixel != 0)
+				{
+					if (!currentPixel->light)
+					{
+						hits++;
+						vec3 point_a = vec3(pos.x - 2 * mov.x, pos.y - 2 * mov.y, pos.z - 2 * mov.z);
+						vec3 point_center = vec3(
+							((int)(pos.x * 100)) / 100.0 + 0.005,
+							((int)(pos.y * 100)) / 100.0 + 0.005,
+							((int)(pos.z * 100)) / 100.0 + 0.005
+						);
+						vec3 temp = point_center - point_a;
+
+						if (currentPixel->def_normal)
+						{
+							//cout << "TEST 1: " << currentPixel->reflect << ".\n";
+							//cout << "TEST 2: " << qaaa->reflect << ".\n";
+
+							//pixl = qaaa;
+							//break;
+
+
+							Vector3 temp_1;
+
+							{
+								double abs_x = abs(temp.x());
+								double abs_y = abs(temp.y());
+								double abs_z = abs(temp.z());
+
+								double maximum = max(abs_x, max(abs_y, abs_z));
+								if (abs_x == maximum)
+								{
+									//cout << "<x>\n";
+									temp_1.x = copysign(1, temp.x());
+									temp_1.y = 0;
+									temp_1.z = 0;
+								}
+								else if (abs_y == maximum)
+								{
+									//cout << "<y>\n";
+									temp_1.x = 0;
+									temp_1.y = copysign(1, temp.y());
+									temp_1.z = 0;
+								}
+								else
+								{
+									//cout << "<z>\n";
+									temp_1.x = 0;
+									temp_1.y = 0;
+									temp_1.z = copysign(1, temp.z());
+								}
+							}
+
+
+							vec3 normal = vec3(temp_1.x, temp_1.y, temp_1.z);
+							tempvec3 = reflect(tempvec3, normal);
+
+							mov = Vector3(tempvec3.x() / 120, tempvec3.y() / 120, tempvec3.z() / 120);
+						}
+						else
+						{
+							vec3 normal = vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
+							tempvec3 = reflect(tempvec3, normal);
+
+							mov = Vector3(tempvec3.x() / 120, tempvec3.y() / 120, tempvec3.z() / 120);
+						}
+						//double temp_a = currentPixel->a / 255.0;
+
+						//light.x *= (currentPixel->r / 255.0) * temp_a;
+						//light.y *= (currentPixel->g / 255.0) * temp_a;
+						//light.z *= (currentPixel->b / 255.0) * temp_a;
+
+				
+
+
+						{
+							Lightdata* temp_light = Light_MEM_MAP->getLightPixel(pos.x, pos.y, pos.z);
+
+							temp_light->r += light.x;
+							temp_light->g += light.y;
+							temp_light->b += light.z;
+							temp_light->amount++;
+						}
+
+
+						double rgb_a = (currentPixel->a / 255.0);
+						light.x *= (currentPixel->r * rgb_a / 255.0);
+						light.y *= (currentPixel->g * rgb_a / 255.0);
+						light.z *= (currentPixel->b * rgb_a / 255.0);
+
+						light.x *= 0.9;
+						light.y *= 0.9;
+						light.z *= 0.9;
+
+						/*if (currentPixel->reflect)
+						{
+
+						}
+						else
+						{
+							light.x *= (currentPixel->light_level.x / 255.0);
+							light.y *= (currentPixel->light_level.y / 255.0);
+							light.z *= (currentPixel->light_level.z / 255.0);
+						}*/
+
+
+
+
+						//currentPixel->r = 255;
+
+
+
+						//break;
+					}
+					else
+					{
+						//return;
+					}
+
+
+				}
+
+
+				//pos.x += mov.x;
+				//pos.y += mov.y;
+				//pos.z += mov.z;
+
+				light.x *= 0.995;
+				light.y *= 0.995;
+				light.z *= 0.995;
+
+				dis--;
+			}
+
+
+		}
+	}
+
+}
+
+
+void calcLight(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP)
+{
+	cout << "Calculating Lights...\n";
+
+	int size = MEM_MAP->Size.x * MEM_MAP->Size.y * MEM_MAP->Size.z;
+
+	Submap** submap = MEM_MAP->submaps;
+
+	int count = 0;
+
+	for (int i = 0; i < size; i++)
+	{
+		if (submap[i] == 0)
+			continue;
+		if (submap[i]->filled)
+		{
+			if (submap[i]->fill.light)
+			{
+				Pixeldata* pixl = &submap[i]->fill;
+				for (int i2 = 0; i2 < size; i2++)
+					calcLightPixel(MEM_MAP, Light_MEM_MAP, pixl, i, i2, &count);
+			}
+		}
+		else
+		{
+			Pixeldata** pixels = submap[i]->pixels;
+			for (int i2 = 0; i2 < size; i2++)
+			{
+				if (pixels[i2] == 0)
+					continue;
+
+				Pixeldata* pixl = pixels[i2];
+
+				if (pixl->light)
+					calcLightPixel(MEM_MAP, Light_MEM_MAP, pixl, i, i2, &count);
+			}
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	cout << "\nCalculated Lights!\n";
+}
+
+
+
+
+
+
 
 
 
@@ -224,6 +587,8 @@ int main(int argc, char** argv)
 {
 	const int width = 1280, height = 720;
 
+	//const int width = 512, height = 288;
+
 	log_debug("Opening Window...", '>');
 
 	//------------------------------------------------------------------------------------------------------------------------------------------------
@@ -232,7 +597,7 @@ int main(int argc, char** argv)
 
 	SDL_Window* window = SDL_CreateWindow
 	(
-		"Raycasting test",
+		"Masls Raytracer",
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		width, height,
 		SDL_WINDOW_SHOWN
@@ -273,7 +638,7 @@ int main(int argc, char** argv)
 	unsigned int frames = 0;
 	Uint64 start = SDL_GetPerformanceCounter();
 
-
+ 
 
 	log_debug("Done.", '<'); 
 
@@ -290,16 +655,18 @@ int main(int argc, char** argv)
 	playerPosition.rot.z = 5;
 
 	double fov = 90;
-	double fov_2 = 1;
+	double fov_2 = 2;
 	int mode = 0;
 
-	mapmem3d MEM_MAP = *(new mapmem3d);
+	mapmem3d MEM_MAP;
 	MEM_MAP.init();
+	Lightmapmem3d Light_MEM_MAP;
+	Light_MEM_MAP.init();
 
 
 
-	for (int i = 0; i < 100 * 100 * 100; i++)
-		MEM_MAP.submaps[i] = 0;
+	/*for (int i = 0; i < 100 * 100 * 100; i++)
+		MEM_MAP.submaps[i] = 0;*/
 
 
 
@@ -320,6 +687,9 @@ int main(int argc, char** argv)
 		aaa->r = 255;
 		aaa->g = 5;
 		aaa->b = 10;
+		aaa->a = 200;
+		aaa->reflect = false;
+		aaa->def_normal = true;
 
 		Submap* xaa = (new Submap);
 		xaa->filled = true;
@@ -335,6 +705,9 @@ int main(int argc, char** argv)
 		qaaa->r = 10;
 		qaaa->g = 15;
 		qaaa->b = 244;
+		qaaa->a = 200;
+		qaaa->reflect = false;
+		qaaa->def_normal = true;
 
 		Submap ax = *(new Submap);
 		ax.filled = false;
@@ -378,9 +751,12 @@ int main(int argc, char** argv)
 				for (int movx = 0; movx < 256; movx++)
 				{
 					Pixeldata* temp_pixl = (new Pixeldata);
-					temp_pixl->r = movx;
-					temp_pixl->g = movy;
-					temp_pixl->b = movz;
+					temp_pixl->r = 255;// movx;
+					temp_pixl->g = 255;//movy;
+					temp_pixl->b = 255;//movz;
+					temp_pixl->a = 200;
+					temp_pixl->reflect = false;
+					temp_pixl->def_normal = true;
 					temp_pixl->reflect = true;
 
 					MEM_MAP.setPixel(50 + (movx * 0.01), 50 + (movy * 0.01), 51 + (movz * 0.01), temp_pixl);
@@ -400,7 +776,9 @@ int main(int argc, char** argv)
 					temp_pixl->r = (movx + 50) * 2;
 					temp_pixl->g = (movy + 50) * 2;
 					temp_pixl->b = (movz + 50) * 2;
-					temp_pixl->reflect = true;
+					temp_pixl->a = 200;
+					temp_pixl->reflect = false;
+					temp_pixl->def_normal = true;
 
 					int oof = ((movx * movx) + (movy * movy) + (movz * movz));
 					if (oof < 50 * 50 && oof > 46 * 46)
@@ -415,33 +793,51 @@ int main(int argc, char** argv)
 
 
 
-	Vector3 scale;
-	scale.x = 4;
-	scale.y = 4;
-	scale.z = 4;
-	Vector3 pos_test;
-	pos_test.x = 48;
-	pos_test.y = 52;
-	pos_test.z = 50;
-	LoadObj("objs\\3d test.png.mrof", &MEM_MAP, &pos_test, &scale);
+	//Vector3 scale;
+	//scale.x = 4;
+	//scale.y = 4;
+	//scale.z = 4;
+	//Vector3 pos_test;
+	//pos_test.x = 48;
+	//pos_test.y = 52;
+	//pos_test.z = 50;
+	//LoadObj("objs\\mountain.png.mrof", &MEM_MAP, &pos_test, &scale);
 
-	pos_test.x = 49;
-	pos_test.y = 52;
-	pos_test.z = 50;
-	scale.x = 1;
-	scale.y = 1;
-	scale.z = 1;
-	LoadObj("objs\\testing.png.mrof", &MEM_MAP, &pos_test, &scale);
+	//pos_test.x = 49;
+	//pos_test.y = 52;
+	//pos_test.z = 50;
+	//scale.x = 1;
+	//scale.y = 1;
+	//scale.z = 1;
+	//LoadObj("objs\\testing.png.mrof", &MEM_MAP, &pos_test, &scale);
 
-	//slices.png.mrof
+	////slices.png.mrof
 
-	pos_test.x = 52;
-	pos_test.y = 53;
-	pos_test.z = 50;
-	scale.x = 5;
-	scale.y = 8;
-	scale.z = 5;
-	LoadObj("objs\\out.png.mrof", &MEM_MAP, &pos_test, &scale);
+	//pos_test.x = 52;
+	//pos_test.y = 53;
+	//pos_test.z = 50;
+	//scale.x = 5;
+	//scale.y = 8;
+	//scale.z = 5;
+	//LoadObj("objs\\out.png.mrof", &MEM_MAP, &pos_test, &scale);
+
+	{
+		string bruh;
+		bruh = "Masls Raytracer - Res: ";
+		bruh += to_string((int)(width / fov_2));
+		bruh += "x";
+		bruh += to_string((int)(height / fov_2));
+		SDL_SetWindowTitle(window, bruh.c_str());
+	}
+
+
+	LoadScene("scenes\\test-scene.mrsf", &MEM_MAP);
+
+
+
+	calcLight(&MEM_MAP, &Light_MEM_MAP);
+
+
 
 
 
@@ -537,9 +933,26 @@ int main(int argc, char** argv)
 				fov -= 10;
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_B == event.key.keysym.scancode)
+			{
 				fov_2 += 1;
+				string bruh;
+				bruh = "Masls Raytracer - Res: ";
+				bruh += to_string((int)(width / fov_2));
+				bruh += "x";
+				bruh += to_string((int)(height / fov_2));
+				SDL_SetWindowTitle(window, bruh.c_str());
+			}
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_N == event.key.keysym.scancode)
-				fov_2 -= 1;
+			{
+				if (fov_2 > 1)
+					fov_2 -= 1;
+				string bruh;
+				bruh = "Masls Raytracer - Res: ";
+				bruh += to_string((int)(width / fov_2));
+				bruh += "x";
+				bruh += to_string((int)(height / fov_2));
+				SDL_SetWindowTitle(window, bruh.c_str());
+			}
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_M == event.key.keysym.scancode)
 				mode = (mode + 1) % 8;
 		}
@@ -573,7 +986,7 @@ int main(int argc, char** argv)
 			getRotatedVec(temp_move_2, false, false);
 
 			playerPosition.pos.x += temp_move_2->pos.x * temp_move->pos.x;
-			playerPosition.pos.y -= temp_move_2->pos.y * temp_move->pos.x;
+			playerPosition.pos.y += temp_move_2->pos.y * temp_move->pos.x;
 			playerPosition.pos.z += temp_move_2->pos.z * temp_move->pos.x;
 		}
 
@@ -624,10 +1037,10 @@ int main(int argc, char** argv)
 			}
 
 			Vector3 pos, mov;
-			for (int j = height - 1; j >= 0; j -= 1)
+			for (int j = height - 1; j >= 0; j -= fov_2)
 			{
 				auto v = (double)j / (height - 1);
-				for (int i = 0; i < width; i += 1)
+				for (int i = 0; i < width; i += fov_2)
 				{
 					auto u = (double)i / (width - 1);
 
@@ -637,11 +1050,11 @@ int main(int argc, char** argv)
 					pos.z = playerPosition.pos.z;
 
 
-					vec3 tempvec3 = (lower_left_corner + u * horizontal + v * vertical - lookfrom);
+					vec3 tempvec3 = unit_vector(lower_left_corner + u * horizontal + v * vertical - lookfrom);
 
-					mov.x = tempvec3.x() / 30;
-					mov.y = tempvec3.y() / 30;
-					mov.z = tempvec3.z() / 30;
+					mov.x = tempvec3.x() / 120;
+					mov.y = tempvec3.y() / 120;
+					mov.z = tempvec3.z() / 120;
 
 
 					if (mode != 0)
@@ -659,18 +1072,103 @@ int main(int argc, char** argv)
 						pixels[offset + 2] = temprgb[0];       // r
 						pixels[offset + 3] = SDL_ALPHA_OPAQUE; // a
 
-
 						continue;
 					}
 
-					int dis = 200;
-					Pixeldata* pixl = 0;
+					int dis = 600;
+					double r = 1, g = 1, b = 1;
 					Pixeldata* currentPixel = 0;
+					
 					while (dis > 0)
 					{
 						currentPixel = MEM_MAP.getPixel(pos.x, pos.y, pos.z);
+						bool move = (currentPixel == 0);
 
-						if (currentPixel == 0)
+						if (currentPixel != 0)
+						{
+							if (currentPixel->light)
+							{
+								break;
+							}
+
+							if (currentPixel->reflect)
+							{
+								vec3 point_a = vec3(pos.x - 2 * mov.x, pos.y - 2 * mov.y, pos.z - 2 * mov.z);
+								vec3 point_center = vec3(
+									((int)(pos.x * 100)) / 100.0 + 0.005,
+									((int)(pos.y * 100)) / 100.0 + 0.005,
+									((int)(pos.z * 100)) / 100.0 + 0.005
+								);
+								vec3 temp = point_center - point_a;
+
+								if (currentPixel->def_normal)
+								{
+									//cout << "TEST 1: " << currentPixel->reflect << ".\n";
+									//cout << "TEST 2: " << qaaa->reflect << ".\n";
+
+									//pixl = qaaa;
+									//break;
+
+
+									Vector3 temp_1;
+									
+									{
+										double abs_x = abs(temp.x());
+										double abs_y = abs(temp.y());
+										double abs_z = abs(temp.z());
+
+										double maximum = max(abs_x, max(abs_y, abs_z));
+										if (abs_x == maximum)
+										{
+											//cout << "<x>\n";
+											temp_1.x = copysign(1, temp.x());
+											temp_1.y = 0;
+											temp_1.z = 0;
+										}
+										else if (abs_y == maximum)
+										{
+											//cout << "<y>\n";
+											temp_1.x = 0;
+											temp_1.y = copysign(1,temp.y());
+											temp_1.z = 0;
+										}
+										else
+										{
+											//cout << "<z>\n";
+											temp_1.x = 0;
+											temp_1.y = 0;
+											temp_1.z = copysign(1, temp.z());
+										}
+									}
+
+
+									vec3 normal = vec3(temp_1.x, temp_1.y, temp_1.z);
+									tempvec3 = reflect(tempvec3, normal);
+
+									mov.x = tempvec3.x() / 120;
+									mov.y = tempvec3.y() / 120;
+									mov.z = tempvec3.z() / 120;
+								}
+								else
+								{
+									vec3 normal = vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
+									tempvec3 = reflect(tempvec3, normal);
+
+									mov.x = tempvec3.x() / 120;
+									mov.y = tempvec3.y() / 120;
+									mov.z = tempvec3.z() / 120;
+								}
+								double temp_a = currentPixel->a / 255.0;
+
+								r *= (currentPixel->r / 255.0) * temp_a;
+								g *= (currentPixel->g / 255.0) * temp_a;
+								b *= (currentPixel->b / 255.0) * temp_a;
+								move = true;
+							}
+						}
+
+
+						if (move)
 						{
 							pos.x += mov.x;
 							pos.y += mov.y;
@@ -679,36 +1177,76 @@ int main(int argc, char** argv)
 							continue;
 						}
 
-						if (currentPixel->testing != 123)
+						//if (currentPixel->testing != 123)
+						//{
+						//	cout << "ERROR!\n";
+						//	pos.x += mov.x;
+						//	pos.y += mov.y;
+						//	pos.z += mov.z;
+						//	dis--;
+						//	continue;
+						//}
+
+
 						{
-							cout << "ERROR!\n";
-							pos.x += mov.x;
-							pos.y += mov.y;
-							pos.z += mov.z;
-							dis--;
-							continue;
+							double temp_a = currentPixel->a / 255.0;
+
+							r *= (currentPixel->r / 255.0) * temp_a;
+							g *= (currentPixel->g / 255.0) * temp_a;
+							b *= (currentPixel->b / 255.0) * temp_a;
 						}
-
-
-						pixl = currentPixel;
 						break;
 					}
 
-
-					int intarray[3] = { 0,0,0 };
-					if (pixl != 0)
+					if (dis == 0)
 					{
-						intarray[0] = pixl->r;
-						intarray[1] = pixl->g;
-						intarray[2] = pixl->b;
+						r = 0;
+						g = 0;
+						b = 0;
 					}
+					else
+					{
+						if (!currentPixel->light)
+						{
+							Lightdata* temp_light = Light_MEM_MAP.getLightPixel(pos.x, pos.y, pos.z);
+							r *= (1 + 9 * temp_light->r / temp_light->amount) / 10;
+							g *= (1 + 9 * temp_light->g / temp_light->amount) / 10;
+							b *= (1 + 9 * temp_light->b / temp_light->amount) / 10;
+
+							//r = (1 + 9 * temp_light->light_level.x) / 10;
+							//g = (1 + 9 * temp_light->light_level.y) / 10;
+							//b = (1 + 9 * temp_light->light_level.z) / 10;
+						}
+						else
+						{
+							r = currentPixel->r / 255.0;
+							g = currentPixel->g / 255.0;
+							b = currentPixel->b / 255.0;
+						}
+					}
+
+					int intarray[3] = 
+					{ 
+						r * 255,
+						g * 255,
+						b * 255
+					};
+										
 					int* temprgb = intarray;
 
-					const unsigned int offset = (texWidth * 4 * ((height - 1) - j)) + i * 4;
-					pixels[offset + 0] = temprgb[2];       // b
-					pixels[offset + 1] = temprgb[1];       // g
-					pixels[offset + 2] = temprgb[0];       // r
-					pixels[offset + 3] = SDL_ALPHA_OPAQUE; // a
+					int t_fov = (int)fov_2;
+
+					for (int off_x = 0; off_x < t_fov && ((i + off_x) < width); off_x++)
+					{
+						for (int off_y = 0; off_y < t_fov && ((j - off_y) >= 0); off_y++)
+						{
+							const unsigned int offset = (texWidth * 4 * ((height - 1) - (j-off_y))) + (i+off_x) * 4;
+							pixels[offset + 0] = temprgb[2];       // b
+							pixels[offset + 1] = temprgb[1];       // g
+							pixels[offset + 2] = temprgb[0];       // r
+							pixels[offset + 3] = SDL_ALPHA_OPAQUE; // a
+						}
+					}
 				}
 			}
 		}
@@ -755,6 +1293,8 @@ int main(int argc, char** argv)
 				<< std::setprecision(1) << std::fixed << frames / seconds << " FPS ("
 				<< std::setprecision(3) << std::fixed << (seconds * 1000.0) / frames << " ms/frame)"
 				<< std::endl;
+
+
 			start = end;
 			frames = 0;
 		}

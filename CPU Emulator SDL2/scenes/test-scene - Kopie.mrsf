@@ -1,0 +1,73 @@
+Da Mountain
+#
+48
+52
+50
+:
+4
+4
+4
+:
+objs\mountain.png.mrof
+
+Da 3D Island
+#
+49
+52
+50
+:
+1
+1
+1
+:
+objs\testing.png.mrof
+
+Da Minecraft home
+# NÖ
+52
+53
+50
+:
+5
+8
+5
+:
+objs\out.png.mrof
+
+
+3D OBJ Reflection Test
+#
+52
+53
+50
+:
+5
+5
+5
+:
+objs\testing cubes.png.mrof
+
+3D OBJ Reflection Test
+#
+52
+53.1
+50
+:
+5
+5
+5
+:
+objs\cubeh.png.mrof
+
+
+WALL
+# A
+51.0
+50
+49.5
+:
+10
+10
+3
+:
+objs\wall.png.mrof
