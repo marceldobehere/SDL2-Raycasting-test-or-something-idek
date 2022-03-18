@@ -80,9 +80,9 @@ void log(const char a[], char sign)
 
 void getRotatedVec(Point* point, bool normalize, bool mult)
 {
-	//double ray_move_x = 0;
-	//double ray_move_y = 0;
-	//double ray_move_z = 0;
+	//long double ray_move_x = 0;
+	//long double ray_move_y = 0;
+	//long double ray_move_z = 0;
 
 
 	//ray_move_x += sin(point->rot.x * pi_a);
@@ -93,10 +93,13 @@ void getRotatedVec(Point* point, bool normalize, bool mult)
 	//ray_move_z += cos(point->rot.y * pi_a);
 	//ray_move_y += cos(point->rot.z * pi_a);
 
+	long double rot_x = point->rot.x * pi_a;
+	long double rot_y = point->rot.y * pi_a;
 
-	double ray_move_x = -cos(point->rot.x * pi_a) * sin(point->rot.y * pi_a);
-	double ray_move_y = sin(point->rot.x * pi_a);
-	double ray_move_z = -cos(point->rot.x * pi_a) * cos(point->rot.y * pi_a);
+
+	long double ray_move_x = -cos(rot_x) * sin(rot_y);
+	long double ray_move_y = sin(rot_x);
+	long double ray_move_z = -cos(rot_x) * cos(rot_y);
 
 
 	//ray_move_x += sin(point->rot.x * pi_a);
@@ -122,16 +125,15 @@ void getRotatedVec(Point* point, bool normalize, bool mult)
 
 	if (normalize)
 	{
-		double mod = 0.0;
+		long double mod = 0.0;
 
 		mod += ray_move_x * ray_move_x;
 		mod += ray_move_y * ray_move_y;
 		mod += ray_move_z * ray_move_z;
 
-		double mag = std::sqrt(mod);
-
-		if (mag != 0) 
+		if (mod != 0) 
 		{
+			long double mag = std::sqrt(mod);
 			ray_move_x /= mag;
 			ray_move_y /= mag;
 			ray_move_z /= mag;
@@ -335,12 +337,12 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 
 	int hits = 0;
 
-	double res = 0.5;
+	long double res = 0.5;
 	vec3 tempvec3;
 	Point ray_;
-	for (double w1 = 0; w1 < 360; w1 += res)
+	for (long double w1 = 0; w1 < 360; w1 += res)
 	{
-		for (double w2 = -90; w2 < 90; w2 += res)
+		for (long double w2 = -90; w2 < 90; w2 += res)
 		{
 			Vector3 light = Vector3(data->r / 255.0, data->g / 255.0, data->b / 255.0);
 			//light = Vector3(1, 1, 1);
@@ -402,11 +404,11 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 							Vector3 temp_1;
 
 							{
-								double abs_x = abs(temp.x());
-								double abs_y = abs(temp.y());
-								double abs_z = abs(temp.z());
+								long double abs_x = abs(temp.x());
+								long double abs_y = abs(temp.y());
+								long double abs_z = abs(temp.z());
 
-								double maximum = max(abs_x, max(abs_y, abs_z));
+								long double maximum = max(abs_x, max(abs_y, abs_z));
 								if (abs_x == maximum)
 								{
 									//cout << "<x>\n";
@@ -443,7 +445,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 
 							mov = Vector3(tempvec3.x() / 120, tempvec3.y() / 120, tempvec3.z() / 120);
 						}
-						//double temp_a = currentPixel->a / 255.0;
+						//long double temp_a = currentPixel->a / 255.0;
 
 						//light.x *= (currentPixel->r / 255.0) * temp_a;
 						//light.y *= (currentPixel->g / 255.0) * temp_a;
@@ -462,7 +464,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 						}
 
 
-						double rgb_a = (currentPixel->a / 255.0);
+						long double rgb_a = (currentPixel->a / 255.0);
 						light.x *= (currentPixel->r * rgb_a / 255.0);
 						light.y *= (currentPixel->g * rgb_a / 255.0);
 						light.z *= (currentPixel->b * rgb_a / 255.0);
@@ -654,8 +656,8 @@ int main(int argc, char** argv)
 	playerPosition.rot.y = -160;
 	playerPosition.rot.z = 5;
 
-	double fov = 90;
-	double fov_2 = 2;
+	long double fov = 90;
+	long double fov_2 = 2;
 	int mode = 0;
 
 	mapmem3d MEM_MAP;
@@ -995,7 +997,7 @@ int main(int argc, char** argv)
 		{
 			const auto aspect_ratio = (double)width / height;
 			vec3 vup(0, 1, 0);
-			double dist_to_focus = 0.5;
+			long double dist_to_focus = 0.5;
 
 
 			point3 lookfrom(
@@ -1076,7 +1078,7 @@ int main(int argc, char** argv)
 					}
 
 					int dis = 600;
-					double r = 1, g = 1, b = 1;
+					long double r = 1, g = 1, b = 1;
 					Pixeldata* currentPixel = 0;
 					
 					while (dis > 0)
@@ -1113,11 +1115,11 @@ int main(int argc, char** argv)
 									Vector3 temp_1;
 									
 									{
-										double abs_x = abs(temp.x());
-										double abs_y = abs(temp.y());
-										double abs_z = abs(temp.z());
+										long double abs_x = abs(temp.x());
+										long double abs_y = abs(temp.y());
+										long double abs_z = abs(temp.z());
 
-										double maximum = max(abs_x, max(abs_y, abs_z));
+										long double maximum = max(abs_x, max(abs_y, abs_z));
 										if (abs_x == maximum)
 										{
 											//cout << "<x>\n";
@@ -1158,7 +1160,7 @@ int main(int argc, char** argv)
 									mov.y = tempvec3.y() / 120;
 									mov.z = tempvec3.z() / 120;
 								}
-								double temp_a = currentPixel->a / 255.0;
+								long double temp_a = currentPixel->a / 255.0;
 
 								r *= (currentPixel->r / 255.0) * temp_a;
 								g *= (currentPixel->g / 255.0) * temp_a;
@@ -1189,7 +1191,7 @@ int main(int argc, char** argv)
 
 
 						{
-							double temp_a = currentPixel->a / 255.0;
+							long double temp_a = currentPixel->a / 255.0;
 
 							r *= (currentPixel->r / 255.0) * temp_a;
 							g *= (currentPixel->g / 255.0) * temp_a;
@@ -1284,7 +1286,7 @@ int main(int argc, char** argv)
 		frames++;
 		const Uint64 end = SDL_GetPerformanceCounter();
 		const static Uint64 freq = SDL_GetPerformanceFrequency();
-		const double seconds = (end - start) / static_cast<double>(freq);
+		const long double seconds = (end - start) / static_cast<double>(freq);
 		if (seconds > 2.0)
 		{
 			std::cout

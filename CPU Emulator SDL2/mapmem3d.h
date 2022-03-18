@@ -8,8 +8,8 @@ struct Size3D
 
 struct Vector3
 {
-	double x = 0, y = 0, z = 0;
-	Vector3(double _x, double _y, double _z)
+	long double x = 0, y = 0, z = 0;
+	Vector3(long double _x, long double _y, long double _z)
 	{
 		x = _x;
 		y = _y;
@@ -31,7 +31,7 @@ struct Pixeldata
 	bool def_normal = true;
 	bool light = false;
 	int r = 0, g = 0, b = 0, a = 0;
-	double normal_x = 0, normal_y = 1, normal_z = 0;
+	long double normal_x = 0, normal_y = 1, normal_z = 0;
 };
 
 
@@ -55,9 +55,9 @@ public:
 	//Submap* submaps[];
 	Submap** submaps = new Submap * [Size.x * Size.y * Size.z]();
 	void init();
-	Pixeldata* getPixel(double x, double y, double z);
-	void setPixel(double x, double y, double z, Pixeldata* pixel);
-	void setPixel(double x, double y, double z, Pixeldata* pixel, Vector3* scale);
+	Pixeldata* getPixel(long double x, long double y, long double z);
+	void setPixel(long double x, long double y, long double z, Pixeldata* pixel);
+	void setPixel(long double x, long double y, long double z, Pixeldata* pixel, Vector3* scale);
 };
 
 
@@ -65,7 +65,7 @@ public:
 
 struct Lightdata
 {
-	double r = 0, g = 0, b = 0;
+	long double r = 0, g = 0, b = 0;
 	int amount = 0;
 };
 
@@ -87,6 +87,6 @@ public:
 	//Submap* submaps[];
 	LightSubmap** submaps = new LightSubmap * [Size.x * Size.y * Size.z]();
 	void init();
-	Lightdata* getLightPixel(double x, double y, double z);
-	void setLightPixel(double x, double y, double z, Lightdata* pixel);
+	Lightdata* getLightPixel(long double x, long double y, long double z);
+	void setLightPixel(long double x, long double y, long double z, Lightdata* pixel);
 };
