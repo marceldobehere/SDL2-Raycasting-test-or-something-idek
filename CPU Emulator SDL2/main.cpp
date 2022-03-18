@@ -2,7 +2,6 @@ using namespace std;
 
 
 // TODO
-// ADD LIGHT SOURCE(s)
 // ADD Distorting angle depending on volume/density whatever
 // ADD RENDERING OPTIMIZATIONS
 // PROFIT
@@ -337,7 +336,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 
 	int hits = 0;
 
-	long double res = 0.5;
+	long double res = 0.4;
 	vec3 tempvec3;
 	Point ray_;
 	for (long double w1 = 0; w1 < 360; w1 += res)
@@ -469,9 +468,9 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 						light.y *= (currentPixel->g * rgb_a / 255.0);
 						light.z *= (currentPixel->b * rgb_a / 255.0);
 
-						light.x *= 0.9;
-						light.y *= 0.9;
-						light.z *= 0.9;
+						light.x *= 0.95;
+						light.y *= 0.95;
+						light.z *= 0.95;
 
 						/*if (currentPixel->reflect)
 						{
@@ -506,9 +505,9 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 				//pos.y += mov.y;
 				//pos.z += mov.z;
 
-				light.x *= 0.995;
-				light.y *= 0.995;
-				light.z *= 0.995;
+				light.x *= 0.996;
+				light.y *= 0.996;
+				light.z *= 0.996;
 
 				dis--;
 			}
@@ -582,11 +581,13 @@ void calcLight(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP)
 
 
 
-
-
-
 int main(int argc, char** argv)
 {
+
+	
+
+
+
 	const int width = 1280, height = 720;
 
 	//const int width = 512, height = 288;
@@ -1041,10 +1042,10 @@ int main(int argc, char** argv)
 			Vector3 pos, mov;
 			for (int j = height - 1; j >= 0; j -= fov_2)
 			{
-				auto v = (double)j / (height - 1);
+				auto v = (long double)j / (height - 1);
 				for (int i = 0; i < width; i += fov_2)
 				{
-					auto u = (double)i / (width - 1);
+					auto u = (long double)i / (width - 1);
 
 					
 					pos.x = playerPosition.pos.x;

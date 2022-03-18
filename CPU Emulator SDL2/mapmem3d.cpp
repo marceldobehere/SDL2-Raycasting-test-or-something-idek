@@ -1,5 +1,8 @@
 #include "mapmem3d.h"
-#include <math.h>
+#define	_ISOC9X_SOURCE	1
+#define _ISOC99_SOURCE	1
+
+#include  <math.h>
 using namespace std;
 #include <iostream>
 
@@ -13,15 +16,14 @@ void mapmem3d::init()
 
 }
 
-
 Pixeldata* mapmem3d::getPixel(long double x, long double y, long double z)
 {
 
 	//printf("TEST5: %d\n", submaps[52 + (50 * 100) + (50 * 10000)]->testing);
 
-	int m_x = (int)x;
-	int m_y = (int)y;
-	int m_z = (int)z;
+	int m_x = int(x);
+	int m_y = int(y);
+	int m_z = int(z);
 
 	if (m_x < 0 || m_x >= 100)
 		return 0;
@@ -42,9 +44,9 @@ Pixeldata* mapmem3d::getPixel(long double x, long double y, long double z)
 	if (submap->filled)
 		return &submap->fill;
 
-	int s_x = ((int)(x * 100)) % 100;
-	int s_y = ((int)(y * 100)) % 100;
-	int s_z = ((int)(z * 100)) % 100;
+	int s_x = int(x * 100) % 100;
+	int s_y = int(y * 100) % 100;
+	int s_z = int(z * 100) % 100;
 
 	//printf("%d %d %d, %d %d %d, (%d) %d %d\n", m_x, m_y, m_z, s_x, s_y, s_z, submap->testing, submap->filled, submaps[m_x + (m_y * 100) + (m_z * 10000)]);
 
@@ -64,9 +66,9 @@ Pixeldata* mapmem3d::getPixel(long double x, long double y, long double z)
 
 void mapmem3d::setPixel(long double x, long double y, long double z, Pixeldata* pixel)
 {
-	int m_x = (int)x;
-	int m_y = (int)y;
-	int m_z = (int)z;
+	int m_x = int(x);
+	int m_y = int(y);
+	int m_z = int(z);
 
 	if (m_x < 0 || m_x >= 100)
 		return;
@@ -101,9 +103,9 @@ void mapmem3d::setPixel(long double x, long double y, long double z, Pixeldata* 
 		}
 	}
 
-	int s_x = (int)(x * 100) % 100;
-	int s_y = (int)(y * 100) % 100;
-	int s_z = (int)(z * 100) % 100;
+	int s_x = int(x * 100) % 100;
+	int s_y = int(y * 100) % 100;
+	int s_z = int(z * 100) % 100;
 
 	submap->pixels[s_x + (s_y * 100) + (s_z * 10000)] = pixel;
 }
@@ -150,9 +152,9 @@ Lightdata* Lightmapmem3d::getLightPixel(long double x, long double y, long doubl
 
 	//printf("TEST5: %d\n", submaps[52 + (50 * 100) + (50 * 10000)]->testing);
 
-	int m_x = (int)x;
-	int m_y = (int)y;
-	int m_z = (int)z;
+	int m_x = int(x);
+	int m_y = int(y);
+	int m_z = int(z);
 
 	if (m_x < 0 || m_x >= 100)
 		return 0;
@@ -176,9 +178,9 @@ Lightdata* Lightmapmem3d::getLightPixel(long double x, long double y, long doubl
 	LightSubmap* submap = submaps[m_x + (m_y * 100) + (m_z * 10000)];
 
 
-	int s_x = ((int)(x * 100)) % 100;
-	int s_y = ((int)(y * 100)) % 100;
-	int s_z = ((int)(z * 100)) % 100;
+	int s_x = int(x * 100) % 100;
+	int s_y = int(y * 100) % 100;
+	int s_z = int(z * 100) % 100;
 
 	//printf("%d %d %d, %d %d %d, (%d) %d %d\n", m_x, m_y, m_z, s_x, s_y, s_z, submap->testing, submap->filled, submaps[m_x + (m_y * 100) + (m_z * 10000)]);
 
@@ -197,11 +199,16 @@ Lightdata* Lightmapmem3d::getLightPixel(long double x, long double y, long doubl
 	return temp;
 }
 
+
+
+
+
+
 void Lightmapmem3d::setLightPixel(long double x, long double y, long double z, Lightdata* pixel)
 {
-	int m_x = (int)x;
-	int m_y = (int)y;
-	int m_z = (int)z;
+	int m_x = int(x);
+	int m_y = int(y);
+	int m_z = int(z);
 
 	if (m_x < 0 || m_x >= 100)
 		return;
@@ -222,10 +229,9 @@ void Lightmapmem3d::setLightPixel(long double x, long double y, long double z, L
 	LightSubmap* submap = (LightSubmap*)submaps[m_x + (m_y * 100) + (m_z * 10000)];
 
 
-
-	int s_x = (int)(x * 100) % 100;
-	int s_y = (int)(y * 100) % 100;
-	int s_z = (int)(z * 100) % 100;
+	int s_x = int(x * 100) % 100;
+	int s_y = int(y * 100) % 100;
+	int s_z = int(z * 100) % 100;
 
 	submap->pixels[s_x + (s_y * 100) + (s_z * 10000)] = pixel;
 }
