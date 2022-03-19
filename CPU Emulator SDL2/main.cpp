@@ -201,10 +201,16 @@ void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos, Vector3* sca
 		else
 			pixels[i]->light = false;
 
+		if (ConvertCharPointerToShort(&data[addr + 14]) == 1)
+			pixels[i]->distortion = true;
+		else
+			pixels[i]->distortion = false;
+
 		
-		pixels[i]->normal_x = ConvertCharPointerToDouble(&data[addr + 14 + (0 * 8)]);
-		pixels[i]->normal_y = ConvertCharPointerToDouble(&data[addr + 14 + (1 * 8)]);
-		pixels[i]->normal_z = ConvertCharPointerToDouble(&data[addr + 14 + (2 * 8)]);
+		pixels[i]->normal_x = ConvertCharPointerToDouble(&data[addr + 16 + (0 * 8)]);
+		pixels[i]->normal_y = ConvertCharPointerToDouble(&data[addr + 16 + (1 * 8)]);
+		pixels[i]->normal_z = ConvertCharPointerToDouble(&data[addr + 16 + (2 * 8)]);
+		pixels[i]->distortion = ConvertCharPointerToDouble(&data[addr + 16 + (3 * 8)]);
 
 		//cout << "NORMS: " << pixels[i]->normal_x << ", " << pixels[i]->normal_y << ", " << pixels[i]->normal_z << ".\n";
 
@@ -305,6 +311,66 @@ void LoadScene(const char* filename, mapmem3d* MEM_MAP)
 
 
 
+vec3 getNormal(Pixeldata* currentPixel, Vector3 pos, Vector3 mov)
+{
+	vec3 point_a = vec3(pos.x - 2 * mov.x, pos.y - 2 * mov.y, pos.z - 2 * mov.z);
+	vec3 point_center = vec3(
+		((int)(pos.x * 100)) / 100.0 + 0.005,
+		((int)(pos.y * 100)) / 100.0 + 0.005,
+		((int)(pos.z * 100)) / 100.0 + 0.005
+	);
+	vec3 temp = point_center - point_a;
+
+
+	if (currentPixel->def_normal)
+	{
+		//cout << "TEST 1: " << currentPixel->reflect << ".\n";
+		//cout << "TEST 2: " << qaaa->reflect << ".\n";
+
+		//pixl = qaaa;
+		//break;
+
+
+		Vector3 temp_1;
+
+		{
+			long double abs_x = abs(temp.x());
+			long double abs_y = abs(temp.y());
+			long double abs_z = abs(temp.z());
+
+			long double maximum = max(abs_x, max(abs_y, abs_z));
+			if (abs_x == maximum)
+			{
+				//cout << "<x>\n";
+				temp_1.x = copysign(1, temp.x());
+				temp_1.y = 0;
+				temp_1.z = 0;
+			}
+			else if (abs_y == maximum)
+			{
+				//cout << "<y>\n";
+				temp_1.x = 0;
+				temp_1.y = copysign(1, temp.y());
+				temp_1.z = 0;
+			}
+			else
+			{
+				//cout << "<z>\n";
+				temp_1.x = 0;
+				temp_1.y = 0;
+				temp_1.z = copysign(1, temp.z());
+			}
+		}
+
+
+		return vec3(temp_1.x, temp_1.y, temp_1.z);
+	}
+
+	
+	return vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
+}
+
+
 
 
 
@@ -336,7 +402,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 
 	int hits = 0;
 
-	long double res = 0.4;
+	long double res = 2;
 	vec3 tempvec3;
 	Point ray_;
 	for (long double w1 = 0; w1 < 360; w1 += res)
@@ -383,67 +449,15 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 					if (!currentPixel->light)
 					{
 						hits++;
-						vec3 point_a = vec3(pos.x - 2 * mov.x, pos.y - 2 * mov.y, pos.z - 2 * mov.z);
-						vec3 point_center = vec3(
-							((int)(pos.x * 100)) / 100.0 + 0.005,
-							((int)(pos.y * 100)) / 100.0 + 0.005,
-							((int)(pos.z * 100)) / 100.0 + 0.005
-						);
-						vec3 temp = point_center - point_a;
-
-						if (currentPixel->def_normal)
+						
 						{
-							//cout << "TEST 1: " << currentPixel->reflect << ".\n";
-							//cout << "TEST 2: " << qaaa->reflect << ".\n";
-
-							//pixl = qaaa;
-							//break;
-
-
-							Vector3 temp_1;
-
-							{
-								long double abs_x = abs(temp.x());
-								long double abs_y = abs(temp.y());
-								long double abs_z = abs(temp.z());
-
-								long double maximum = max(abs_x, max(abs_y, abs_z));
-								if (abs_x == maximum)
-								{
-									//cout << "<x>\n";
-									temp_1.x = copysign(1, temp.x());
-									temp_1.y = 0;
-									temp_1.z = 0;
-								}
-								else if (abs_y == maximum)
-								{
-									//cout << "<y>\n";
-									temp_1.x = 0;
-									temp_1.y = copysign(1, temp.y());
-									temp_1.z = 0;
-								}
-								else
-								{
-									//cout << "<z>\n";
-									temp_1.x = 0;
-									temp_1.y = 0;
-									temp_1.z = copysign(1, temp.z());
-								}
-							}
-
-
-							vec3 normal = vec3(temp_1.x, temp_1.y, temp_1.z);
+							vec3 normal = getNormal(currentPixel, pos, mov);
 							tempvec3 = reflect(tempvec3, normal);
-
 							mov = Vector3(tempvec3.x() / 120, tempvec3.y() / 120, tempvec3.z() / 120);
 						}
-						else
-						{
-							vec3 normal = vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
-							tempvec3 = reflect(tempvec3, normal);
 
-							mov = Vector3(tempvec3.x() / 120, tempvec3.y() / 120, tempvec3.z() / 120);
-						}
+
+
 						//long double temp_a = currentPixel->a / 255.0;
 
 						//light.x *= (currentPixel->r / 255.0) * temp_a;
@@ -1082,6 +1096,8 @@ int main(int argc, char** argv)
 					long double r = 1, g = 1, b = 1;
 					Pixeldata* currentPixel = 0;
 					
+					double distortion = 1;
+
 					while (dis > 0)
 					{
 						currentPixel = MEM_MAP.getPixel(pos.x, pos.y, pos.z);
@@ -1096,73 +1112,36 @@ int main(int argc, char** argv)
 
 							if (currentPixel->reflect)
 							{
-								vec3 point_a = vec3(pos.x - 2 * mov.x, pos.y - 2 * mov.y, pos.z - 2 * mov.z);
-								vec3 point_center = vec3(
-									((int)(pos.x * 100)) / 100.0 + 0.005,
-									((int)(pos.y * 100)) / 100.0 + 0.005,
-									((int)(pos.z * 100)) / 100.0 + 0.005
-								);
-								vec3 temp = point_center - point_a;
-
-								if (currentPixel->def_normal)
 								{
-									//cout << "TEST 1: " << currentPixel->reflect << ".\n";
-									//cout << "TEST 2: " << qaaa->reflect << ".\n";
-
-									//pixl = qaaa;
-									//break;
-
-
-									Vector3 temp_1;
-									
-									{
-										long double abs_x = abs(temp.x());
-										long double abs_y = abs(temp.y());
-										long double abs_z = abs(temp.z());
-
-										long double maximum = max(abs_x, max(abs_y, abs_z));
-										if (abs_x == maximum)
-										{
-											//cout << "<x>\n";
-											temp_1.x = copysign(1, temp.x());
-											temp_1.y = 0;
-											temp_1.z = 0;
-										}
-										else if (abs_y == maximum)
-										{
-											//cout << "<y>\n";
-											temp_1.x = 0;
-											temp_1.y = copysign(1,temp.y());
-											temp_1.z = 0;
-										}
-										else
-										{
-											//cout << "<z>\n";
-											temp_1.x = 0;
-											temp_1.y = 0;
-											temp_1.z = copysign(1, temp.z());
-										}
-									}
-
-
-									vec3 normal = vec3(temp_1.x, temp_1.y, temp_1.z);
+									vec3 normal = getNormal(currentPixel, pos, mov);
 									tempvec3 = reflect(tempvec3, normal);
 
 									mov.x = tempvec3.x() / 120;
 									mov.y = tempvec3.y() / 120;
 									mov.z = tempvec3.z() / 120;
 								}
-								else
-								{
-									vec3 normal = vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
-									tempvec3 = reflect(tempvec3, normal);
+								
 
-									mov.x = tempvec3.x() / 120;
-									mov.y = tempvec3.y() / 120;
-									mov.z = tempvec3.z() / 120;
-								}
 								long double temp_a = currentPixel->a / 255.0;
 
+								r *= (currentPixel->r / 255.0) * temp_a;
+								g *= (currentPixel->g / 255.0) * temp_a;
+								b *= (currentPixel->b / 255.0) * temp_a;
+								move = true;
+							}
+
+							if (currentPixel->transparent)
+							{
+
+
+
+
+
+
+
+
+
+								long double temp_a = currentPixel->a / 255.0;
 								r *= (currentPixel->r / 255.0) * temp_a;
 								g *= (currentPixel->g / 255.0) * temp_a;
 								b *= (currentPixel->b / 255.0) * temp_a;

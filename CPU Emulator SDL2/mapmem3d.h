@@ -30,6 +30,8 @@ struct Pixeldata
 	bool reflect = false;
 	bool def_normal = true;
 	bool light = false;
+	bool transparent = false;
+	double distortion = 1;
 	int r = 0, g = 0, b = 0, a = 0;
 	long double normal_x = 0, normal_y = 1, normal_z = 0;
 };
