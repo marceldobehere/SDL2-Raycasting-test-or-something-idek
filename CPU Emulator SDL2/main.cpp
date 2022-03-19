@@ -36,7 +36,7 @@ struct Point
 
 
 
-
+double ray_step_divider = 500;
 
 
 int rgbtoint(int r, int g, int b)
@@ -202,9 +202,9 @@ void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos, Vector3* sca
 			pixels[i]->light = false;
 
 		if (ConvertCharPointerToShort(&data[addr + 14]) == 1)
-			pixels[i]->distortion = true;
+			pixels[i]->transparent = true;
 		else
-			pixels[i]->distortion = false;
+			pixels[i]->transparent = false;
 
 		
 		pixels[i]->normal_x = ConvertCharPointerToDouble(&data[addr + 16 + (0 * 8)]);
@@ -371,7 +371,15 @@ vec3 getNormal(Pixeldata* currentPixel, Vector3 pos, Vector3 mov)
 }
 
 
-
+void refract_2(Pixeldata* pixel, vec3* tempvec3, Vector3 pos, Vector3 mov, double n1, double n2, bool flip)
+{
+	if (n1 != n2)
+	{
+		vec3 normal = getNormal(pixel, pos, mov);
+		normal *= -1;
+		*tempvec3 = refract(unit_vector(*tempvec3), unit_vector(normal), n2 / n1);
+	}
+}
 
 
 void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* data, int index, int subindex, int* lightcount)
@@ -427,12 +435,14 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 
 			Vector3 mov, pos;
 			pos = Vector3(ray_.pos.x, ray_.pos.y, ray_.pos.z);
-			mov = Vector3(tempvec3.x() / 120, tempvec3.y() / 120, tempvec3.z() / 120);
+			mov = Vector3(tempvec3.x() / ray_step_divider, tempvec3.y() / ray_step_divider, tempvec3.z() / ray_step_divider);
 
 
-			Pixeldata* currentPixel;
+			Pixeldata* currentPixel = data;
+			Pixeldata* oldPixel = 0;
+			double distortion = data->distortion;
 
-			int dis = 600;
+			int dis = 3000;
 			while (dis > 0 && (light.x + light.y + light.z) > 0.05)
 			{
 				pos.x += mov.x;
@@ -440,7 +450,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 				pos.z += mov.z;
 				//cout << " - Light: " << *lightcount << " POS: " << pos.x << ", " << pos.y << ", " << pos.z << "DIS:  " << (600-dis) << " HITS:" << hits << "                 \r";
 
-
+				oldPixel = currentPixel;
 				currentPixel = MEM_MAP->getPixel(pos.x, pos.y, pos.z);
 
 
@@ -448,63 +458,89 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 				{
 					if (!currentPixel->light)
 					{
-						hits++;
-						
+						if (currentPixel->transparent)
 						{
-							vec3 normal = getNormal(currentPixel, pos, mov);
-							tempvec3 = reflect(tempvec3, normal);
-							mov = Vector3(tempvec3.x() / 120, tempvec3.y() / 120, tempvec3.z() / 120);
-						}
+							if (distortion != currentPixel->distortion)
+							{
+								//vec3 normal = getNormal(currentPixel, pos, mov);
+								//tempvec3 = refract_2(tempvec3, normal, distortion, currentPixel->distortion);
+								//
+								refract_2(currentPixel, &tempvec3, pos, mov, distortion, currentPixel->distortion, false);
+								distortion = currentPixel->distortion;
 
 
+								mov.x = tempvec3.x() / ray_step_divider;
+								mov.y = tempvec3.y() / ray_step_divider;
+								mov.z = tempvec3.z() / ray_step_divider;
+							}
+							
 
-						//long double temp_a = currentPixel->a / 255.0;
-
-						//light.x *= (currentPixel->r / 255.0) * temp_a;
-						//light.y *= (currentPixel->g / 255.0) * temp_a;
-						//light.z *= (currentPixel->b / 255.0) * temp_a;
-
-				
-
-
-						{
-							Lightdata* temp_light = Light_MEM_MAP->getLightPixel(pos.x, pos.y, pos.z);
-
-							temp_light->r += light.x;
-							temp_light->g += light.y;
-							temp_light->b += light.z;
-							temp_light->amount++;
-						}
-
-
-						long double rgb_a = (currentPixel->a / 255.0);
-						light.x *= (currentPixel->r * rgb_a / 255.0);
-						light.y *= (currentPixel->g * rgb_a / 255.0);
-						light.z *= (currentPixel->b * rgb_a / 255.0);
-
-						light.x *= 0.95;
-						light.y *= 0.95;
-						light.z *= 0.95;
-
-						/*if (currentPixel->reflect)
-						{
-
+							long double rgb_a = (currentPixel->a / 255.0);
+							light.x *= (currentPixel->r * rgb_a / 255.0);
+							light.y *= (currentPixel->g * rgb_a / 255.0);
+							light.z *= (currentPixel->b * rgb_a / 255.0);
 						}
 						else
 						{
-							light.x *= (currentPixel->light_level.x / 255.0);
-							light.y *= (currentPixel->light_level.y / 255.0);
-							light.z *= (currentPixel->light_level.z / 255.0);
-						}*/
+							hits++;
+
+							{
+								vec3 normal = getNormal(currentPixel, pos, mov);
+								tempvec3 = reflect(tempvec3, normal);
+								mov = Vector3(tempvec3.x() / ray_step_divider, tempvec3.y() / ray_step_divider, tempvec3.z() / ray_step_divider);
+							}
+
+
+
+							//long double temp_a = currentPixel->a / 255.0;
+
+							//light.x *= (currentPixel->r / 255.0) * temp_a;
+							//light.y *= (currentPixel->g / 255.0) * temp_a;
+							//light.z *= (currentPixel->b / 255.0) * temp_a;
 
 
 
 
-						//currentPixel->r = 255;
+							{
+								Lightdata* temp_light = Light_MEM_MAP->getLightPixel(pos.x, pos.y, pos.z);
+
+								temp_light->r += light.x;
+								temp_light->g += light.y;
+								temp_light->b += light.z;
+								temp_light->amount++;
+							}
+
+
+							long double rgb_a = (currentPixel->a / 255.0);
+							light.x *= (currentPixel->r * rgb_a / 255.0);
+							light.y *= (currentPixel->g * rgb_a / 255.0);
+							light.z *= (currentPixel->b * rgb_a / 255.0);
+
+							light.x *= 0.95;
+							light.y *= 0.95;
+							light.z *= 0.95;
+
+							/*if (currentPixel->reflect)
+							{
+
+							}
+							else
+							{
+								light.x *= (currentPixel->light_level.x / 255.0);
+								light.y *= (currentPixel->light_level.y / 255.0);
+								light.z *= (currentPixel->light_level.z / 255.0);
+							}*/
 
 
 
-						//break;
+
+							//currentPixel->r = 255;
+
+
+
+							//break;
+						}
+						
 					}
 					else
 					{
@@ -513,15 +549,26 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 
 
 				}
+				else
+				{
+					if (distortion != 1)
+					{
+						refract_2(oldPixel, &tempvec3, pos, mov, distortion, 1, true);
+						distortion = 1;
 
+						mov.x = tempvec3.x() / ray_step_divider;
+						mov.y = tempvec3.y() / ray_step_divider;
+						mov.z = tempvec3.z() / ray_step_divider;
+					}
+				}
 
 				//pos.x += mov.x;
 				//pos.y += mov.y;
 				//pos.z += mov.z;
 
-				light.x *= 0.996;
-				light.y *= 0.996;
-				light.z *= 0.996;
+				light.x *= 0.999;
+				light.y *= 0.999;
+				light.z *= 0.999;
 
 				dis--;
 			}
@@ -1069,9 +1116,9 @@ int main(int argc, char** argv)
 
 					vec3 tempvec3 = unit_vector(lower_left_corner + u * horizontal + v * vertical - lookfrom);
 
-					mov.x = tempvec3.x() / 120;
-					mov.y = tempvec3.y() / 120;
-					mov.z = tempvec3.z() / 120;
+					mov.x = tempvec3.x() / ray_step_divider;
+					mov.y = tempvec3.y() / ray_step_divider;
+					mov.z = tempvec3.z() / ray_step_divider;
 
 
 					if (mode != 0)
@@ -1092,14 +1139,16 @@ int main(int argc, char** argv)
 						continue;
 					}
 
-					int dis = 600;
+					int dis = 1800;
 					long double r = 1, g = 1, b = 1;
 					Pixeldata* currentPixel = 0;
+					Pixeldata* oldPixel = 0;
 					
 					double distortion = 1;
 
 					while (dis > 0)
 					{
+						oldPixel = currentPixel;
 						currentPixel = MEM_MAP.getPixel(pos.x, pos.y, pos.z);
 						bool move = (currentPixel == 0);
 
@@ -1116,9 +1165,9 @@ int main(int argc, char** argv)
 									vec3 normal = getNormal(currentPixel, pos, mov);
 									tempvec3 = reflect(tempvec3, normal);
 
-									mov.x = tempvec3.x() / 120;
-									mov.y = tempvec3.y() / 120;
-									mov.z = tempvec3.z() / 120;
+									mov.x = tempvec3.x() / ray_step_divider;
+									mov.y = tempvec3.y() / ray_step_divider;
+									mov.z = tempvec3.z() / ray_step_divider;
 								}
 								
 
@@ -1132,23 +1181,35 @@ int main(int argc, char** argv)
 
 							if (currentPixel->transparent)
 							{
+								if (distortion != currentPixel->distortion)
+								{
+									refract_2(currentPixel, &tempvec3, pos, mov, distortion, currentPixel->distortion, false);
+									distortion = currentPixel->distortion;
 
+									mov.x = tempvec3.x() / ray_step_divider;
+									mov.y = tempvec3.y() / ray_step_divider;
+									mov.z = tempvec3.z() / ray_step_divider;
+								}
 
-
-
-
-
-
-
-
-								long double temp_a = currentPixel->a / 255.0;
-								r *= (currentPixel->r / 255.0) * temp_a;
-								g *= (currentPixel->g / 255.0) * temp_a;
-								b *= (currentPixel->b / 255.0) * temp_a;
+								//long double temp_a = currentPixel->a / 255.0;
+								//r *= (currentPixel->r / 255.0) * temp_a;
+								//g *= (currentPixel->g / 255.0) * temp_a;
+								//b *= (currentPixel->b / 255.0) * temp_a;
 								move = true;
 							}
 						}
+						else
+						{
+							if (distortion != 1)
+							{
+								refract_2(oldPixel, &tempvec3, pos, mov, distortion, 1, true);
+								distortion = 1;
 
+								mov.x = tempvec3.x() / ray_step_divider;
+								mov.y = tempvec3.y() / ray_step_divider;
+								mov.z = tempvec3.z() / ray_step_divider;
+							}
+						}
 
 						if (move)
 						{
