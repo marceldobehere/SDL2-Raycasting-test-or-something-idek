@@ -48,7 +48,7 @@ objs\out.png.mrof
 objs\testing cubes.png.mrof
 
 Yellow Light
-#
+# a
 53
 54
 50.5
@@ -72,7 +72,7 @@ RGB Light
 objs\lights2.png.mrof
 
 3D Sphere Reflection Test
-#
+# a
 53
 53.5
 51
@@ -85,7 +85,7 @@ objs\cubeeeh.png.mrof
 
 
 3D Sphere Reflection Test
-# A
+#
 53
 53.4
 51

@@ -36,7 +36,7 @@ struct Point
 
 
 
-double ray_step_divider = 500;
+double ray_step_divider = 550;
 
 
 int rgbtoint(int r, int g, int b)
@@ -119,7 +119,7 @@ void getRotatedVec(Point* point, bool normalize, bool mult)
 	//ray_move_x += (cos(point->rot.z * pi_a) - sin(point->rot.z * pi_a));
 	//ray_move_y += (cos(point->rot.z * pi_a) + sin(point->rot.z * pi_a));
 
-	
+
 
 
 	if (normalize)
@@ -130,7 +130,7 @@ void getRotatedVec(Point* point, bool normalize, bool mult)
 		mod += ray_move_y * ray_move_y;
 		mod += ray_move_z * ray_move_z;
 
-		if (mod != 0) 
+		if (mod != 0)
 		{
 			long double mag = std::sqrt(mod);
 			ray_move_x /= mag;
@@ -174,9 +174,9 @@ void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos, Vector3* sca
 	cout << "OBJ PIXEL SIZE: " << pixelsize << "\n";
 	cout << "OBJ UNIQUE PIXEL COUNT: " << uniquepixelcount << "\n";
 
-	Pixeldata** pixels = new Pixeldata*[uniquepixelcount];
+	Pixeldata** pixels = new Pixeldata * [uniquepixelcount];
 	int addr = 16;
-	for (int i = 0; i < uniquepixelcount; i ++)
+	for (int i = 0; i < uniquepixelcount; i++)
 	{
 		pixels[i] = new Pixeldata;
 		pixels[i]->r = ConvertCharPointerToShort(&data[addr + 0]);
@@ -206,7 +206,7 @@ void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos, Vector3* sca
 		else
 			pixels[i]->transparent = false;
 
-		
+
 		pixels[i]->normal_x = ConvertCharPointerToDouble(&data[addr + 16 + (0 * 8)]);
 		pixels[i]->normal_y = ConvertCharPointerToDouble(&data[addr + 16 + (1 * 8)]);
 		pixels[i]->normal_z = ConvertCharPointerToDouble(&data[addr + 16 + (2 * 8)]);
@@ -308,76 +308,147 @@ void LoadScene(const char* filename, mapmem3d* MEM_MAP)
 }
 
 
+vec3 getNormal2(vec3 pos_r, vec3 pos_c)
+{
+	vec3 temp = unit_vector(pos_r - pos_c);
 
+
+	Vector3 temp_1;
+
+	{
+		long double abs_x = abs(temp.x());
+		long double abs_y = abs(temp.y());
+		long double abs_z = abs(temp.z());
+
+		long double maximum = max(abs_x, max(abs_y, abs_z));
+		if (abs_x == maximum)
+		{
+			//cout << "<x>\n";
+			temp_1.x = copysign(1, temp.x());
+			temp_1.y = 0;
+			temp_1.z = 0;
+		}
+		else if (abs_y == maximum)
+		{
+			//cout << "<y>\n";
+			temp_1.x = 0;
+			temp_1.y = copysign(1, temp.y());
+			temp_1.z = 0;
+		}
+		else
+		{
+			//cout << "<z>\n";
+			temp_1.x = 0;
+			temp_1.y = 0;
+			temp_1.z = copysign(1, temp.z());
+		}
+	}
+
+
+	return vec3(temp_1.x, temp_1.y, temp_1.z);
+}
 
 
 vec3 getNormal(Pixeldata* currentPixel, Vector3 pos, Vector3 mov)
 {
-	vec3 point_a = vec3(pos.x - 2 * mov.x, pos.y - 2 * mov.y, pos.z - 2 * mov.z);
-	vec3 point_center = vec3(
-		((int)(pos.x * 100)) / 100.0 + 0.005,
-		((int)(pos.y * 100)) / 100.0 + 0.005,
-		((int)(pos.z * 100)) / 100.0 + 0.005
-	);
-	vec3 temp = point_center - point_a;
-
 
 	if (currentPixel->def_normal)
 	{
-		//cout << "TEST 1: " << currentPixel->reflect << ".\n";
-		//cout << "TEST 2: " << qaaa->reflect << ".\n";
+		vec3 point_a = vec3(pos.x - 2 * mov.x, pos.y - 2 * mov.y, pos.z - 2 * mov.z);
+		vec3 point_center = vec3(
+			(((int)(pos.x * 100)) / 100.0) + 0.005,
+			(((int)(pos.y * 100)) / 100.0) + 0.005,
+			(((int)(pos.z * 100)) / 100.0) + 0.005
+		);
+		vec3 temp = point_center - point_a;
 
-		//pixl = qaaa;
-		//break;
-
-
-		Vector3 temp_1;
-
-		{
-			long double abs_x = abs(temp.x());
-			long double abs_y = abs(temp.y());
-			long double abs_z = abs(temp.z());
-
-			long double maximum = max(abs_x, max(abs_y, abs_z));
-			if (abs_x == maximum)
-			{
-				//cout << "<x>\n";
-				temp_1.x = copysign(1, temp.x());
-				temp_1.y = 0;
-				temp_1.z = 0;
-			}
-			else if (abs_y == maximum)
-			{
-				//cout << "<y>\n";
-				temp_1.x = 0;
-				temp_1.y = copysign(1, temp.y());
-				temp_1.z = 0;
-			}
-			else
-			{
-				//cout << "<z>\n";
-				temp_1.x = 0;
-				temp_1.y = 0;
-				temp_1.z = copysign(1, temp.z());
-			}
-		}
-
-
-		return vec3(temp_1.x, temp_1.y, temp_1.z);
+		return getNormal2(point_a, point_center);
 	}
 
-	
+
 	return vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
 }
 
 
+
+inline vec3 refract_4(const vec3& incidentVec, const vec3& normal, float eta)
+{
+	float N_dot_I = dot(normal, incidentVec);
+	float k = 1.f - eta * eta * (1.f - N_dot_I * N_dot_I);
+	if (k < 0.f)
+		return vec3(0.f, 0.f, 0.f);
+	else
+		return eta * incidentVec - (eta * N_dot_I + sqrtf(k)) * normal;
+}
+
+vec3 refract_5(vec3 i, vec3 n, double eta)
+{
+	eta = 2.0f - eta;
+	float cosi = dot(n, i);
+	return (i * eta - n * (-cosi + eta * cosi));
+}
+
+
+vec3 refract_3(vec3 norm, vec3 mov, double n1, double n2)
+{
+	long double eta = n1 / n2;
+	long double cosi = -dot(norm, mov);
+	long double k = 1 - eta * eta * (1 - cosi * cosi);
+	vec3 refrdir = mov * eta + norm * (eta * cosi - sqrt(k));
+	return unit_vector(refrdir);
+}
+
+
+
+
 void refract_2(Pixeldata* pixel, vec3* tempvec3, Vector3 pos, Vector3 mov, double n1, double n2, bool flip)
 {
+	//vec3 normal = getNormal(pixel, pos, mov);
+	//*tempvec3 = reflect(*tempvec3, normal);
+	//return;
+
 	if (n1 != n2)
 	{
-		vec3 normal = getNormal(pixel, pos, mov);
-		normal *= -1;
+		vec3 normal;
+
+		//if (flip)
+		//normal *= -1;
+
+		if (flip)
+		{
+			if (pixel->def_normal)
+			{
+				vec3 pos_ = vec3(pos.x - 2 * mov.x, pos.y - 2 * mov.y, pos.z - 2 * mov.z);
+				vec3 center = vec3(
+					(((int)(pos.x * 100)) / 100.0) + 0.005,
+					(((int)(pos.y * 100)) / 100.0) + 0.005,
+					(((int)(pos.z * 100)) / 100.0) + 0.005
+				);
+
+				normal = getNormal2(pos_, center);
+			}
+			else
+			{
+				normal = -getNormal(pixel, pos, mov);
+			}
+		}
+		else
+			normal = getNormal(pixel, pos, mov);
+		//normal *= -1;
+
+		//if (flip)
+		//{
+		//	double temp = n1;
+		//	n1 = n2;
+		//	n2 = temp;
+		//}
+
 		*tempvec3 = refract(unit_vector(*tempvec3), unit_vector(normal), n2 / n1);
+		//*tempvec3 = refract(unit_vector(*tempvec3), unit_vector(normal), FresnelReflectAmount(n1, n2, normal, unit_vector(*tempvec3)));
+		//* tempvec3 = refract_3(unit_vector(normal), unit_vector(*tempvec3), n1, n2);
+		//*tempvec3 = unit_vector(refract_4(unit_vector(*tempvec3), unit_vector(normal), n1 / n2));
+		//*tempvec3 = refract_5(unit_vector(*tempvec3), unit_vector(normal), n1 / n2);
+		//* tempvec3 = unit_vector(reflect(unit_vector(*tempvec3), unit_vector(normal)));
 	}
 }
 
@@ -392,7 +463,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 	Size3D size2 = MEM_MAP->submaps[index]->Size;
 
 	Vector3 Position;
-	Position.x = ((index) % size.x); 
+	Position.x = ((index) % size.x);
 	Position.y = ((index / size.x) % size.y);
 	Position.z = ((index / (size.x * size.y)) % size.z);
 
@@ -410,7 +481,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 
 	int hits = 0;
 
-	long double res = 2;
+	long double res = 1;
 	vec3 tempvec3;
 	Point ray_;
 	for (long double w1 = 0; w1 < 360; w1 += res)
@@ -442,7 +513,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 			Pixeldata* oldPixel = 0;
 			double distortion = data->distortion;
 
-			int dis = 3000;
+			int dis = 3500;
 			while (dis > 0 && (light.x + light.y + light.z) > 0.05)
 			{
 				pos.x += mov.x;
@@ -465,6 +536,8 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 								//vec3 normal = getNormal(currentPixel, pos, mov);
 								//tempvec3 = refract_2(tempvec3, normal, distortion, currentPixel->distortion);
 								//
+
+
 								refract_2(currentPixel, &tempvec3, pos, mov, distortion, currentPixel->distortion, false);
 								distortion = currentPixel->distortion;
 
@@ -473,7 +546,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 								mov.y = tempvec3.y() / ray_step_divider;
 								mov.z = tempvec3.z() / ray_step_divider;
 							}
-							
+
 
 							long double rgb_a = (currentPixel->a / 255.0);
 							light.x *= (currentPixel->r * rgb_a / 255.0);
@@ -540,7 +613,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 
 							//break;
 						}
-						
+
 					}
 					else
 					{
@@ -645,7 +718,7 @@ void calcLight(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP)
 int main(int argc, char** argv)
 {
 
-	
+
 
 
 
@@ -682,7 +755,7 @@ int main(int argc, char** argv)
 	{
 		//std::cout << SDL_GetPixelFormatName(info.texture_formats[i]) << std::endl;
 	}
-	 
+
 	const unsigned int texWidth = width;
 	const unsigned int texHeight = height;
 	SDL_Texture* texture = SDL_CreateTexture
@@ -702,9 +775,9 @@ int main(int argc, char** argv)
 	unsigned int frames = 0;
 	Uint64 start = SDL_GetPerformanceCounter();
 
- 
 
-	log_debug("Done.", '<'); 
+
+	log_debug("Done.", '<');
 
 
 	//main_test();
@@ -734,7 +807,7 @@ int main(int argc, char** argv)
 
 
 
-	//cout << "TEST3: " << MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)]->testing << "\n";
+		//cout << "TEST3: " << MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)]->testing << "\n";
 
 	MEM_MAP.getPixel(0, 0, 0);
 
@@ -746,57 +819,57 @@ int main(int argc, char** argv)
 	//MEM_MAP.getPixel(0, 0, 0);
 
 
-	
-		Pixeldata* aaa = (new Pixeldata);
-		aaa->r = 255;
-		aaa->g = 5;
-		aaa->b = 10;
-		aaa->a = 200;
-		aaa->reflect = false;
-		aaa->def_normal = true;
 
-		Submap* xaa = (new Submap);
-		xaa->filled = true;
-		xaa->fill = *aaa;
+	Pixeldata* aaa = (new Pixeldata);
+	aaa->r = 255;
+	aaa->g = 5;
+	aaa->b = 10;
+	aaa->a = 200;
+	aaa->reflect = false;
+	aaa->def_normal = true;
 
-		cout << "TEST1: " << xaa->testing << "\n";
+	Submap* xaa = (new Submap);
+	xaa->filled = true;
+	xaa->fill = *aaa;
 
-		MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)] = xaa;
+	cout << "TEST1: " << xaa->testing << "\n";
 
-		cout << "TEST2: " << MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)]->testing << "\n";
+	MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)] = xaa;
 
-		Pixeldata* qaaa = (new Pixeldata);
-		qaaa->r = 10;
-		qaaa->g = 15;
-		qaaa->b = 244;
-		qaaa->a = 200;
-		qaaa->reflect = false;
-		qaaa->def_normal = true;
+	cout << "TEST2: " << MEM_MAP.submaps[52 + (50 * 100) + (50 * 10000)]->testing << "\n";
 
-		Submap ax = *(new Submap);
-		ax.filled = false;
-		ax.fill = *qaaa;
+	Pixeldata* qaaa = (new Pixeldata);
+	qaaa->r = 10;
+	qaaa->g = 15;
+	qaaa->b = 244;
+	qaaa->a = 200;
+	qaaa->reflect = false;
+	qaaa->def_normal = true;
 
-		for (int i = 0; i < 10000; i += 1)
-		{
-			ax.pixels[i + 0] = qaaa;
-		}
+	Submap ax = *(new Submap);
+	ax.filled = false;
+	ax.fill = *qaaa;
 
-		for (int i = 10000; i < 100000; i += 2)
-		{
-			ax.pixels[i + 0] = qaaa;
-			ax.pixels[i + 1] = aaa;
-		}
+	for (int i = 0; i < 10000; i += 1)
+	{
+		ax.pixels[i + 0] = qaaa;
+	}
 
-		for (int i = 100000; i < 1000000; i += 3)
-		{
-			ax.pixels[i + 2] = 0;
-		}
+	for (int i = 10000; i < 100000; i += 2)
+	{
+		ax.pixels[i + 0] = qaaa;
+		ax.pixels[i + 1] = aaa;
+	}
+
+	for (int i = 100000; i < 1000000; i += 3)
+	{
+		ax.pixels[i + 2] = 0;
+	}
 
 
 
-		MEM_MAP.submaps[52 + (51 * 100) + (50 * 10000)] = &ax;
-	
+	MEM_MAP.submaps[52 + (51 * 100) + (50 * 10000)] = &ax;
+
 
 
 
@@ -943,22 +1016,22 @@ int main(int argc, char** argv)
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_W == event.key.keysym.scancode)
 				temp_move->pos.z += 0.25;
-			
+
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_S == event.key.keysym.scancode)
 				temp_move->pos.z -= 0.25;
-			
+
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_A == event.key.keysym.scancode)
 				temp_move->pos.x += 0.25;
-			
+
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_D == event.key.keysym.scancode)
 				temp_move->pos.x -= 0.25;
-			
+
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_Q == event.key.keysym.scancode)
 				temp_move->pos.y -= 0.25;
-			
+
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_E == event.key.keysym.scancode)
 				temp_move->pos.y += 0.25;
-			
+
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_DOWN == event.key.keysym.scancode)
 				playerPosition.rot.x -= 5;
 
@@ -970,7 +1043,7 @@ int main(int argc, char** argv)
 
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_RIGHT == event.key.keysym.scancode)
 				playerPosition.rot.y -= 5;
-			
+
 			if (SDL_KEYDOWN == event.type && SDL_SCANCODE_R == event.key.keysym.scancode)
 				playerPosition.rot.z += 2.5;
 
@@ -1055,7 +1128,7 @@ int main(int argc, char** argv)
 		}
 
 
-		
+
 		{
 			const auto aspect_ratio = (double)width / height;
 			vec3 vup(0, 1, 0);
@@ -1063,8 +1136,8 @@ int main(int argc, char** argv)
 
 
 			point3 lookfrom(
-				playerPosition.pos.x, 
-				playerPosition.pos.y, 
+				playerPosition.pos.x,
+				playerPosition.pos.y,
 				playerPosition.pos.z
 			);
 
@@ -1077,16 +1150,16 @@ int main(int argc, char** argv)
 
 			point3 lookat(
 				playerPosition.pos.x + look.pos.x,
-				playerPosition.pos.y + look.pos.y ,
+				playerPosition.pos.y + look.pos.y,
 				playerPosition.pos.z + look.pos.z
 			);
 
 
 			vec3 horizontal;
-			vec3 vertical ;
+			vec3 vertical;
 			vec3 lower_left_corner;
 			{
-				auto theta = fov*pi_a;
+				auto theta = fov * pi_a;
 				auto h = tan(theta / 2);
 				auto viewport_height = 2.0 * h;
 				auto viewport_width = aspect_ratio * viewport_height;
@@ -1108,7 +1181,7 @@ int main(int argc, char** argv)
 				{
 					auto u = (long double)i / (width - 1);
 
-					
+
 					pos.x = playerPosition.pos.x;
 					pos.y = playerPosition.pos.y;
 					pos.z = playerPosition.pos.z;
@@ -1139,11 +1212,11 @@ int main(int argc, char** argv)
 						continue;
 					}
 
-					int dis = 1800;
+					int dis = 2300;
 					long double r = 1, g = 1, b = 1;
 					Pixeldata* currentPixel = 0;
 					Pixeldata* oldPixel = 0;
-					
+
 					double distortion = 1;
 
 					while (dis > 0)
@@ -1169,7 +1242,7 @@ int main(int argc, char** argv)
 									mov.y = tempvec3.y() / ray_step_divider;
 									mov.z = tempvec3.z() / ray_step_divider;
 								}
-								
+
 
 								long double temp_a = currentPixel->a / 255.0;
 
@@ -1252,9 +1325,9 @@ int main(int argc, char** argv)
 						if (!currentPixel->light)
 						{
 							Lightdata* temp_light = Light_MEM_MAP.getLightPixel(pos.x, pos.y, pos.z);
-							r *= (1 + 9 * temp_light->r / temp_light->amount) / 10;
-							g *= (1 + 9 * temp_light->g / temp_light->amount) / 10;
-							b *= (1 + 9 * temp_light->b / temp_light->amount) / 10;
+							r *= (1 + (1 * temp_light->r / temp_light->amount)) / 2;
+							g *= (1 + (1 * temp_light->g / temp_light->amount)) / 2;
+							b *= (1 + (1 * temp_light->b / temp_light->amount)) / 2;
 
 							//r = (1 + 9 * temp_light->light_level.x) / 10;
 							//g = (1 + 9 * temp_light->light_level.y) / 10;
@@ -1268,13 +1341,13 @@ int main(int argc, char** argv)
 						}
 					}
 
-					int intarray[3] = 
-					{ 
+					int intarray[3] =
+					{
 						r * 255,
 						g * 255,
 						b * 255
 					};
-										
+
 					int* temprgb = intarray;
 
 					int t_fov = (int)fov_2;
@@ -1283,7 +1356,7 @@ int main(int argc, char** argv)
 					{
 						for (int off_y = 0; off_y < t_fov && ((j - off_y) >= 0); off_y++)
 						{
-							const unsigned int offset = (texWidth * 4 * ((height - 1) - (j-off_y))) + (i+off_x) * 4;
+							const unsigned int offset = (texWidth * 4 * ((height - 1) - (j - off_y))) + (i + off_x) * 4;
 							pixels[offset + 0] = temprgb[2];       // b
 							pixels[offset + 1] = temprgb[1];       // g
 							pixels[offset + 2] = temprgb[0];       // r

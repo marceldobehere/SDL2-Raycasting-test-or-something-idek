@@ -30,12 +30,13 @@ class vec3 {
         long double operator[](int i) const { return e[i]; }
         long double& operator[](int i) { return e[i]; }
 
-        vec3& operator+=(const vec3 &v) {
+        vec3& operator+=(const vec3& v) {
             e[0] += v.e[0];
             e[1] += v.e[1];
             e[2] += v.e[2];
             return *this;
         }
+
 
         vec3& operator*=(const long double t) {
             e[0] *= t;
