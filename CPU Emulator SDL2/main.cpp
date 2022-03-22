@@ -9,7 +9,7 @@ using namespace std;
 
 
 
-#include <SDL.h>
+#include "SDL2/include/SDL.h"
 #include <iostream>
 #include <iomanip>
 #include <vector>
