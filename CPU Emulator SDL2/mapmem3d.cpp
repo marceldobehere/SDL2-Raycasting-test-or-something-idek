@@ -18,9 +18,9 @@ void mapmem3d::init()
 
 Pixeldata* mapmem3d::getPixel(long double x, long double y, long double z)
 {
-	x += 0.005;
-	y += 0.005;
-	z += 0.005;
+	x += 0.0002;
+	y += 0.0002;
+	z += 0.0002;
 	//printf("TEST5: %d\n", submaps[52 + (50 * 100) + (50 * 10000)]->testing);
 
 
@@ -73,9 +73,9 @@ Pixeldata* mapmem3d::getPixel(long double x, long double y, long double z)
 
 void mapmem3d::setPixel(long double x, long double y, long double z, Pixeldata* pixel)
 {
-	x += 0.005;
-	y += 0.005;
-	z += 0.005;
+	x += 0.0002;
+	y += 0.0002;
+	z += 0.0002;
 
 	int m_x = int(x);
 	int m_y = int(y);
@@ -160,9 +160,9 @@ void Lightmapmem3d::init()
 
 Lightdata* Lightmapmem3d::getLightPixel(long double x, long double y, long double z)
 {
-	x += 0.005;
-	y += 0.005;
-	z += 0.005;
+	x += 0.0002;
+	y += 0.0002;
+	z += 0.0002;
 
 	//printf("TEST5: %d\n", submaps[52 + (50 * 100) + (50 * 10000)]->testing);
 
@@ -220,9 +220,9 @@ Lightdata* Lightmapmem3d::getLightPixel(long double x, long double y, long doubl
 
 void Lightmapmem3d::setLightPixel(long double x, long double y, long double z, Lightdata* pixel)
 {
-	x += 0.005;
-	y += 0.005;
-	z += 0.005;
+	x += 0.0002;
+	y += 0.0002;
+	z += 0.0002;
 
 
 	int m_x = int(x);

@@ -355,15 +355,16 @@ vec3 getNormal(Pixeldata* currentPixel, Vector3 pos, Vector3 mov)
 {
 	if (!currentPixel->def_normal)
 		return vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
-	vec3 mov_ = unit_vector(vec3(mov.x, mov.y, mov.z)) / 500;
-	
 
+	vec3 mov_ = unit_vector(vec3(mov.x, mov.y, mov.z)) / 1000;
 	vec3 point_a = vec3(pos.x - 2 * mov_.x(), pos.y - 2 * mov_.y(), pos.z - 2 * mov_.z());
+
+
 	//vec3 point_a = vec3(pos.x, pos.y, pos.z);
 	vec3 point_center = vec3(
-		(((int)(pos.x * 100.0)) / 100.0) + 0.005,
-		(((int)(pos.y * 100.0)) / 100.0) + 0.005,
-		(((int)(pos.z * 100.0)) / 100.0) + 0.005
+		(((int)((pos.x - 0.0002) * 100.0)) / 100.0) + 0.005,
+		(((int)((pos.y - 0.0002) * 100.0)) / 100.0) + 0.005,
+		(((int)((pos.z - 0.0002) * 100.0)) / 100.0) + 0.005
 	);
 
 	return getNormal2(point_a, point_center);
@@ -404,7 +405,8 @@ vec3 refract_3(vec3 norm, vec3 mov, double n1, double n2)
 void refract_2(Pixeldata* pixel, vec3* tempvec3, Vector3 pos, Vector3 mov, double n1, double n2, bool flip)
 {
 	vec3 normal = getNormal(pixel, pos, mov);
-	*tempvec3 = reflect(*tempvec3, normal);
+	//*tempvec3 = reflect(*tempvec3, normal);
+	*tempvec3 = normal;
 	return;
 
 	if (n1 != n2)
@@ -1224,6 +1226,7 @@ int main(int argc, char** argv)
 					long double r = 1, g = 1, b = 1;
 					Pixeldata* currentPixel = 0;
 					Pixeldata* oldPixel = 0;
+					Pixeldata tempPixel;
 
 					double distortion = 1;
 
@@ -1265,6 +1268,13 @@ int main(int argc, char** argv)
 								if (distortion != currentPixel->distortion)
 								{
 									refract_2(currentPixel, &tempvec3, pos, mov, distortion, currentPixel->distortion, false);
+									
+									r = (tempvec3.x() + 1) / 2;
+									g = (tempvec3.y() + 1) / 2;
+									b = (tempvec3.z() + 1) / 2;
+
+									currentPixel = &tempPixel;
+									break;
 									//distortion = currentPixel->distortion;
 
 									mov.x = tempvec3.x() / ray_step_divider;
@@ -1281,7 +1291,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							if (distortion != 1)
+							/*if (distortion != 1)
 							{
 								refract_2(oldPixel, &tempvec3, pos, mov, distortion, 1, true);
 								distortion = 1;
@@ -1289,7 +1299,7 @@ int main(int argc, char** argv)
 								mov.x = tempvec3.x() / ray_step_divider;
 								mov.y = tempvec3.y() / ray_step_divider;
 								mov.z = tempvec3.z() / ray_step_divider;
-							}
+							}*/
 						}
 
 						if (move)
