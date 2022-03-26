@@ -37,8 +37,8 @@ struct Point
 
 
 double ray_step_divider = 600;
-int max_dis_l = 5000;
-int max_dis_n = 3400;
+int max_dis_l = 6000;
+int max_dis_n = 4000;
 
 
 int rgbtoint(int r, int g, int b)
@@ -244,7 +244,7 @@ void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos, Vector3* sca
 					Pixeldata* temp_pixl = pixels[ConvertCharPointerToInt(&data[addr])];
 					if (temp_pixl != 0)
 						MEM_MAP->setPixel(
-							(pos->x + ((x * scale->x) / 100.0)), 
+							(pos->x + ((x * scale->x) / 100.0)),
 							(pos->y + ((y * scale->y) / 100.0)),
 							(pos->z + ((z * scale->z) / 100.0)),
 							temp_pixl, scale);
@@ -375,12 +375,12 @@ vec3 getNormal(Pixeldata* currentPixel, Vector3 pos, Vector3 mov)
 		(((int)((pos.z) * 100.0)) / 100.0) + 0.005
 	);
 
-		return getNormal2(point_a, point_center);
-	}
-
-
-	return vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
+	return getNormal2(point_a, point_center);
 }
+//
+//
+//	return vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
+//}
 
 
 
@@ -469,7 +469,7 @@ void refract_2(Pixeldata* pixel, vec3* tempvec3, Vector3 pos, Vector3 mov, doubl
 		//*tempvec3 = refract(unit_vector(*tempvec3), unit_vector(normal), FresnelReflectAmount(n1, n2, normal, unit_vector(*tempvec3)));
 		//* tempvec3 = refract_3(unit_vector(normal), unit_vector(*tempvec3), n2, n1);
 		//*tempvec3 = unit_vector(refract_4(unit_vector(*tempvec3), unit_vector(normal), n1 / n2));
-		*tempvec3 = refract_5(unit_vector(*tempvec3), unit_vector(normal), n1 / n2);
+		* tempvec3 = refract_5(unit_vector(*tempvec3), unit_vector(normal), n1 / n2);
 		//* tempvec3 = unit_vector(reflect(unit_vector(*tempvec3), unit_vector(normal)));
 	}
 }
@@ -1280,7 +1280,7 @@ int main(int argc, char** argv)
 								if (distortion != currentPixel->distortion)
 								{
 									refract_2(currentPixel, &tempvec3, pos, mov, distortion, currentPixel->distortion, false);
-									
+
 									//r = (tempvec3.x() + 1) / 2;
 									//g = (tempvec3.y() + 1) / 2;
 									//b = (tempvec3.z() + 1) / 2;
