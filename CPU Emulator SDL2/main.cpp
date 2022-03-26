@@ -9,7 +9,7 @@ using namespace std;
 
 
 
-#include <SDL.h>
+#include "SDL2/include/SDL.h"
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -36,7 +36,9 @@ struct Point
 
 
 
-double ray_step_divider = 550;
+double ray_step_divider = 600;
+int max_dis_l = 6000;
+int max_dis_n = 4000;
 
 
 int rgbtoint(int r, int g, int b)
@@ -241,7 +243,11 @@ void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos, Vector3* sca
 				{
 					Pixeldata* temp_pixl = pixels[ConvertCharPointerToInt(&data[addr])];
 					if (temp_pixl != 0)
-						MEM_MAP->setPixel((pos->x + (x / 100.0 * scale->x)), (pos->y + (y / 100.0 * scale->y)), (pos->z + (z / 100.0 * scale->z)), temp_pixl, scale);
+						MEM_MAP->setPixel(
+							(pos->x + ((x * scale->x) / 100.0)),
+							(pos->y + ((y * scale->y) / 100.0)),
+							(pos->z + ((z * scale->z) / 100.0)),
+							temp_pixl, scale);
 
 					addr += 4;
 				}
@@ -249,7 +255,11 @@ void LoadObj(const char* filename, mapmem3d* MEM_MAP, Vector3* pos, Vector3* sca
 				{
 					Pixeldata* temp_pixl = pixels[ConvertCharPointerToShort(&data[addr])];
 					if (temp_pixl != 0)
-						MEM_MAP->setPixel((pos->x + (x / 100.0 * scale->x)), (pos->y + (y / 100.0 * scale->y)), (pos->z + (z / 100.0 * scale->z)), temp_pixl, scale);
+						MEM_MAP->setPixel(
+							(pos->x + ((x * scale->x) / 100.0)),
+							(pos->y + ((y * scale->y) / 100.0)),
+							(pos->z + ((z * scale->z) / 100.0)),
+							temp_pixl, scale);
 
 					addr += 2;
 				}
@@ -351,23 +361,26 @@ vec3 getNormal2(vec3 pos_r, vec3 pos_c)
 
 vec3 getNormal(Pixeldata* currentPixel, Vector3 pos, Vector3 mov)
 {
+	if (!currentPixel->def_normal)
+		return vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
 
-	if (currentPixel->def_normal)
-	{
-		vec3 point_a = vec3(pos.x - 2 * mov.x, pos.y - 2 * mov.y, pos.z - 2 * mov.z);
-		vec3 point_center = vec3(
-			(((int)(pos.x * 100)) / 100.0) + 0.005,
-			(((int)(pos.y * 100)) / 100.0) + 0.005,
-			(((int)(pos.z * 100)) / 100.0) + 0.005
-		);
-		vec3 temp = point_center - point_a;
-
-		return getNormal2(point_a, point_center);
-	}
+	vec3 mov_ = unit_vector(vec3(mov.x, mov.y, mov.z)) / 5000;
+	vec3 point_a = vec3(pos.x - 2 * mov_.x(), pos.y - 2 * mov_.y(), pos.z - 2 * mov_.z());
 
 
-	return vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
+	//vec3 point_a = vec3(pos.x, pos.y, pos.z);
+	vec3 point_center = vec3(
+		(((int)((pos.x) * 100.0)) / 100.0) + 0.005,
+		(((int)((pos.y) * 100.0)) / 100.0) + 0.005,
+		(((int)((pos.z) * 100.0)) / 100.0) + 0.005
+	);
+
+	return getNormal2(point_a, point_center);
 }
+//
+//
+//	return vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
+//}
 
 
 
@@ -404,7 +417,8 @@ vec3 refract_3(vec3 norm, vec3 mov, double n1, double n2)
 void refract_2(Pixeldata* pixel, vec3* tempvec3, Vector3 pos, Vector3 mov, double n1, double n2, bool flip)
 {
 	//vec3 normal = getNormal(pixel, pos, mov);
-	//*tempvec3 = reflect(*tempvec3, normal);
+	////*tempvec3 = reflect(*tempvec3, normal);
+	//*tempvec3 = normal;
 	//return;
 
 	if (n1 != n2)
@@ -414,26 +428,34 @@ void refract_2(Pixeldata* pixel, vec3* tempvec3, Vector3 pos, Vector3 mov, doubl
 		//if (flip)
 		//normal *= -1;
 
-		if (flip)
-		{
-			if (pixel->def_normal)
-			{
-				vec3 pos_ = vec3(pos.x - 2 * mov.x, pos.y - 2 * mov.y, pos.z - 2 * mov.z);
-				vec3 center = vec3(
-					(((int)(pos.x * 100)) / 100.0) + 0.005,
-					(((int)(pos.y * 100)) / 100.0) + 0.005,
-					(((int)(pos.z * 100)) / 100.0) + 0.005
-				);
+		//if (flip)
+		//{
+		//	if (pixel->def_normal)
+		//	{
+		//		vec3 pos_ = vec3(pos.x - 2 * mov.x, pos.y - 2 * mov.y, pos.z - 2 * mov.z);
+		//		vec3 center = vec3(
+		//			(((int)(pos.x * 100)) / 100.0) + 0.005,
+		//			(((int)(pos.y * 100)) / 100.0) + 0.005,
+		//			(((int)(pos.z * 100)) / 100.0) + 0.005
+		//		);
 
-				normal = getNormal2(pos_, center);
-			}
-			else
-			{
-				normal = -getNormal(pixel, pos, mov);
-			}
-		}
-		else
-			normal = getNormal(pixel, pos, mov);
+		//		normal = getNormal2(pos_, center);
+		//		//normal = getNormal(pixel, pos, mov);
+		//	}
+		//	else
+		//	{
+		//		normal = -getNormal(pixel, pos, mov);
+		//	}
+		//	normal = -getNormal(pixel, pos, mov);
+		//}
+		//else
+		//	normal = getNormal(pixel, pos, mov);#
+
+
+		normal = getNormal(pixel, pos, mov);
+		if (flip && !pixel->def_normal)
+			normal *= -1;
+
 		//normal *= -1;
 
 		//if (flip)
@@ -443,11 +465,11 @@ void refract_2(Pixeldata* pixel, vec3* tempvec3, Vector3 pos, Vector3 mov, doubl
 		//	n2 = temp;
 		//}
 
-		*tempvec3 = refract(unit_vector(*tempvec3), unit_vector(normal), n2 / n1);
+		//*tempvec3 = refract(unit_vector(*tempvec3), unit_vector(normal), n2 / n1);
 		//*tempvec3 = refract(unit_vector(*tempvec3), unit_vector(normal), FresnelReflectAmount(n1, n2, normal, unit_vector(*tempvec3)));
-		//* tempvec3 = refract_3(unit_vector(normal), unit_vector(*tempvec3), n1, n2);
+		//* tempvec3 = refract_3(unit_vector(normal), unit_vector(*tempvec3), n2, n1);
 		//*tempvec3 = unit_vector(refract_4(unit_vector(*tempvec3), unit_vector(normal), n1 / n2));
-		//*tempvec3 = refract_5(unit_vector(*tempvec3), unit_vector(normal), n1 / n2);
+		* tempvec3 = refract_5(unit_vector(*tempvec3), unit_vector(normal), n1 / n2);
 		//* tempvec3 = unit_vector(reflect(unit_vector(*tempvec3), unit_vector(normal)));
 	}
 }
@@ -481,7 +503,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 
 	int hits = 0;
 
-	long double res = 1;
+	long double res = 0.4;
 	vec3 tempvec3;
 	Point ray_;
 	for (long double w1 = 0; w1 < 360; w1 += res)
@@ -1216,6 +1238,7 @@ int main(int argc, char** argv)
 					long double r = 1, g = 1, b = 1;
 					Pixeldata* currentPixel = 0;
 					Pixeldata* oldPixel = 0;
+					Pixeldata tempPixel;
 
 					double distortion = 1;
 
@@ -1257,6 +1280,13 @@ int main(int argc, char** argv)
 								if (distortion != currentPixel->distortion)
 								{
 									refract_2(currentPixel, &tempvec3, pos, mov, distortion, currentPixel->distortion, false);
+
+									//r = (tempvec3.x() + 1) / 2;
+									//g = (tempvec3.y() + 1) / 2;
+									//b = (tempvec3.z() + 1) / 2;
+
+									//currentPixel = &tempPixel;
+									//break;
 									distortion = currentPixel->distortion;
 
 									mov.x = tempvec3.x() / ray_step_divider;
