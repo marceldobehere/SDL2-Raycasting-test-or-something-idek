@@ -9,7 +9,7 @@ using namespace std;
 
 
 
-#include <SDL.h>
+#include "SDL2/include/SDL.h"
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -320,7 +320,7 @@ void LoadScene(const char* filename, mapmem3d* MEM_MAP)
 
 vec3 getNormal2(vec3 pos_r, vec3 pos_c)
 {
-	vec3 temp =pos_r - pos_c;
+	vec3 temp = unit_vector(pos_r - pos_c);
 
 
 	Vector3 temp_1;
@@ -375,7 +375,11 @@ vec3 getNormal(Pixeldata* currentPixel, Vector3 pos, Vector3 mov)
 		(((int)((pos.z) * 100.0)) / 100.0) + 0.005
 	);
 
-	return getNormal2(point_a, point_center);
+		return getNormal2(point_a, point_center);
+	}
+
+
+	return vec3(currentPixel->normal_x, currentPixel->normal_y, currentPixel->normal_z);
 }
 
 
@@ -531,7 +535,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 			Pixeldata* oldPixel = 0;
 			double distortion = data->distortion;
 
-			int dis = max_dis_l;
+			int dis = 3500;
 			while (dis > 0 && (light.x + light.y + light.z) > 0.05)
 			{
 				pos.x += mov.x;
@@ -1230,7 +1234,7 @@ int main(int argc, char** argv)
 						continue;
 					}
 
-					int dis = max_dis_n;
+					int dis = 2300;
 					long double r = 1, g = 1, b = 1;
 					Pixeldata* currentPixel = 0;
 					Pixeldata* oldPixel = 0;
