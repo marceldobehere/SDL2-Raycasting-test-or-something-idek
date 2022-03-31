@@ -501,7 +501,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 
 	 
 
-	int hits = 0;
+	int hits = 0; 
 	 
 	long double res = 0.4;
 	vec3 tempvec3;
