@@ -495,7 +495,7 @@ void calcLightPixel(mapmem3d* MEM_MAP, Lightmapmem3d* Light_MEM_MAP, Pixeldata* 
 
 
 	{
-		Lightdata* temp_l = new Lightdata;
+		Lightdata* temp_l = new Lightdata; 
 		Light_MEM_MAP->setLightPixel(Position.x, Position.y, Position.z, temp_l);
 	}
 
